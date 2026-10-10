@@ -29,23 +29,69 @@ html, body {
   display: flex; flex-direction: column;
   position: relative;
   box-shadow: 0 0 40px rgba(0,0,0,.35);
+  overflow: hidden;
 }
 .screen {
   flex: 1; display: flex; flex-direction: column;
   padding: calc(12px + var(--safe-top)) 14px calc(12px + var(--safe-bottom));
   min-height: 0;
+  position: relative;
 }
 .screen[hidden] { display: none !important; }
 
-/* Title */
-#screen-title { align-items: center; justify-content: center; gap: 10px; text-align: center; }
-#screen-title h1 {
-  margin: 0; font-size: 42px; letter-spacing: 0.35em; font-weight: 800;
-  color: var(--accent); text-indent: 0.35em;
+/* ---- Title with village art ---- */
+#screen-title {
+  align-items: center; justify-content: flex-end;
+  gap: 10px; text-align: center;
+  padding-bottom: calc(28px + var(--safe-bottom));
+  overflow: hidden;
 }
-.subtitle { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
-.title-art { margin-bottom: 4px; }
-.hint { margin-top: 16px; font-size: 12px; color: var(--muted); max-width: 260px; }
+.title-bg {
+  position: absolute; inset: 0; z-index: 0;
+  overflow: hidden;
+}
+.title-bg picture, .title-bg img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center 35%;
+  display: block;
+  image-rendering: auto;
+}
+.title-bg-shade {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, rgba(20,30,12,.15) 0%, rgba(20,30,12,.25) 40%, rgba(16,24,10,.78) 72%, rgba(12,18,8,.92) 100%);
+  pointer-events: none;
+}
+.title-content {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  width: 100%;
+}
+#screen-title h1 {
+  margin: 0; font-size: 48px; letter-spacing: 0.35em; font-weight: 800;
+  color: #f1f8e9; text-indent: 0.35em;
+  text-shadow: 0 2px 12px rgba(0,0,0,.55), 0 0 2px rgba(0,0,0,.8);
+}
+#screen-title .subtitle {
+  margin: 0 0 8px; color: #dcedc8; font-size: 14px;
+  text-shadow: 0 1px 6px rgba(0,0,0,.5);
+}
+#screen-title .hint {
+  margin-top: 12px; font-size: 12px; color: #c5e1a5; max-width: 280px;
+  text-shadow: 0 1px 4px rgba(0,0,0,.45);
+}
+#screen-title .btn {
+  background: rgba(255,248,231,.95);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+}
+#screen-title .btn.primary {
+  background: var(--grass); color: #fff; border-color: #33691e;
+}
+#screen-title .btn.ghost {
+  background: rgba(255,255,255,.12); color: #e8f5d8;
+  border-color: rgba(232,245,216,.55); border-style: solid;
+}
 
 /* Buttons */
 .btn {
@@ -75,16 +121,37 @@ html, body {
 .pill.gold { border-color: #f9a825; background: #fff8e1; }
 .pill.food { border-color: #9ccc65; background: #f1f8e9; }
 
-.farm-wrap {
-  position: relative; flex: 1; min-height: 0;
-  display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(180deg, #b3e5fc 0%, #c8e6c9 55%, #aed581 100%);
-  border-radius: var(--radius); border: 3px solid #5d4037; overflow: hidden;
+/* Scene: village + plot card */
+.scene-wrap {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; gap: 8px;
 }
-#farm {
-  image-rendering: pixelated; image-rendering: crisp-edges;
-  width: 100%; height: auto; max-height: 100%;
+.village-scene {
+  position: relative; flex: 1.15; min-height: 120px;
+  border-radius: var(--radius); border: 3px solid #5d4037; overflow: hidden;
+  background: #2e4a22;
+}
+.village-scene picture, .village-img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center 40%;
   display: block;
+}
+.season-tint {
+  position: absolute; inset: 0; pointer-events: none;
+  mix-blend-mode: soft-light;
+  transition: background .6s ease, opacity .6s ease;
+  opacity: 0.55;
+}
+.season-tint[data-season="0"] { background: #a5d6a7; opacity: 0.25; } /* 春 */
+.season-tint[data-season="1"] { background: #ffd54f; opacity: 0.35; } /* 夏 */
+.season-tint[data-season="2"] { background: #ff8a65; opacity: 0.4; }  /* 秋 */
+.season-tint[data-season="3"] { background: #90caf9; opacity: 0.5; }  /* 冬 */
+.scene-caption {
+  position: absolute; left: 10px; top: 10px;
+  background: rgba(20,30,12,.62); color: #f1f8e9;
+  font-size: 11px; font-weight: 700; padding: 4px 10px;
+  border-radius: 999px; backdrop-filter: blur(4px);
+  pointer-events: none;
 }
 .toast {
   position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
@@ -93,6 +160,45 @@ html, body {
   z-index: 2;
 }
 .toast[hidden] { display: none !important; }
+
+.plot-card {
+  flex: 0 0 auto;
+  background: var(--panel);
+  border: 3px solid #5d4037;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+}
+.plot-card-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 10px 4px;
+  background: linear-gradient(180deg, #efebe9, #fffdf5);
+  border-bottom: 1px solid #d7ccc8;
+}
+.plot-card-title { font-size: 13px; font-weight: 800; color: var(--accent); }
+.plot-card-hint { font-size: 11px; color: var(--muted); font-weight: 600; }
+.plot-canvas-wrap {
+  position: relative;
+  background: #c8e6c9;
+}
+.plot-bg {
+  position: absolute; inset: 0; z-index: 0;
+  opacity: 0.38;
+  pointer-events: none;
+}
+.plot-bg img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block;
+  filter: saturate(1.1);
+}
+#farm {
+  position: relative; z-index: 1;
+  image-rendering: auto;
+  width: 100%; height: auto;
+  display: block;
+  max-height: 180px;
+}
 
 .status-bar {
   display: flex; justify-content: space-between; align-items: center;
@@ -156,7 +262,10 @@ html, body {
 .tiny { font-size: 11px; color: var(--muted); font-weight: 400; }
 
 @media (max-height: 700px) {
-  #screen-title h1 { font-size: 34px; }
+  #screen-title h1 { font-size: 36px; }
   .controls .btn { font-size: 12px; padding: 8px 2px; }
   .dir { padding: 8px 4px; font-size: 12px; }
+  .village-scene { min-height: 90px; flex: 1; }
+  #farm { max-height: 140px; }
+  .plot-card-hint { display: none; }
 }

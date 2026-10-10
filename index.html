@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="青畦">
 <meta name="format-detection" content="telephone=no,email=no,address=no">
-<meta name="theme-color" content="#7cb342">
+<meta name="theme-color" content="#5d8a3a">
 <title>青畦</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -16,15 +16,21 @@
 <div id="app">
   <!-- 標題 -->
   <section id="screen-title" class="screen">
-    <div class="title-art" aria-hidden="true">
-      <canvas id="titleCanvas" width="280" height="140"></canvas>
+    <div class="title-bg" aria-hidden="true">
+      <picture>
+        <source srcset="assets/bg_village.webp" type="image/webp">
+        <img src="assets/bg_village.jpg" alt="" decoding="async">
+      </picture>
+      <div class="title-bg-shade"></div>
     </div>
-    <h1>青畦</h1>
-    <p class="subtitle">自動種田 · 望住村慢慢好</p>
-    <button type="button" class="btn primary" id="btn-start">開始新局</button>
-    <button type="button" class="btn" id="btn-continue" hidden>繼續</button>
-    <button type="button" class="btn ghost" id="btn-settings-title">設定</button>
-    <p class="hint">點 AUTO，村會自己播、澆、收、賣</p>
+    <div class="title-content">
+      <h1>青畦</h1>
+      <p class="subtitle">自動種田 · 望住村慢慢好</p>
+      <button type="button" class="btn primary" id="btn-start">開始新局</button>
+      <button type="button" class="btn" id="btn-continue" hidden>繼續</button>
+      <button type="button" class="btn ghost" id="btn-settings-title">設定</button>
+      <p class="hint">點 AUTO，村會自己播、澆、收、賣</p>
+    </div>
   </section>
 
   <!-- 遊戲 -->
@@ -40,9 +46,30 @@
       </div>
     </header>
 
-    <div class="farm-wrap">
-      <canvas id="farm" width="360" height="420"></canvas>
-      <div class="toast" id="toast" hidden></div>
+    <div class="scene-wrap">
+      <div class="village-scene" id="village-scene">
+        <picture>
+          <source srcset="assets/bg_village.webp" type="image/webp">
+          <img src="assets/bg_village.jpg" alt="青畦村落" class="village-img" id="village-img" decoding="async">
+        </picture>
+        <div class="season-tint" id="season-tint" data-season="0"></div>
+        <div class="scene-caption" id="scene-caption">春光滿村</div>
+        <div class="toast" id="toast" hidden></div>
+      </div>
+
+      <div class="plot-card">
+        <div class="plot-card-head">
+          <span class="plot-card-title">田畦</span>
+          <span class="plot-card-hint" id="plot-hint">點畦操作 · AUTO 亦會自動</span>
+        </div>
+        <div class="plot-canvas-wrap">
+          <picture class="plot-bg" aria-hidden="true">
+            <source srcset="assets/bg_fields.webp" type="image/webp">
+            <img src="assets/bg_fields.jpg" alt="" decoding="async">
+          </picture>
+          <canvas id="farm" width="360" height="168"></canvas>
+        </div>
+      </div>
     </div>
 
     <div class="status-bar">
@@ -94,7 +121,7 @@
     </div>
   </div>
 
-  <!-- 設定 stub -->
+  <!-- 設定 -->
   <div id="modal-settings" class="modal" hidden>
     <div class="modal-card">
       <h2>設定</h2>

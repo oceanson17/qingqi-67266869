@@ -5,8 +5,10 @@
   const SETTINGS_KEY = 'qingqi_settings_v1';
   const COLS = 6;
   const ROWS = 7;
-  const TILE = 48;
-  const HOUSE_CELLS = new Set(['1,1', '2,1']); // house footprint on grid overlay zone
+  const TILE = 52;
+  const PLOT_COLS = 6;
+  const HOUSE_CELLS = new Set(['1,1', '2,1']); // house footprint on scenic map
+  const SEASON_CAPTIONS = ['春光滿村', '夏日茂盛', '秋獲將至', '冬雪守田'];
 
   const SEASONS = ['春', '夏', '秋', '冬'];
   const CROPS = {
@@ -26,8 +28,6 @@
   /** @type {HTMLCanvasElement} */
   const canvas = document.getElementById('farm');
   const ctx = canvas.getContext('2d');
-  const titleCanvas = document.getElementById('titleCanvas');
-  const tctx = titleCanvas.getContext('2d');
 
   let state = null;
   let settings = loadSettings();
@@ -139,206 +139,141 @@
       b.classList.toggle('active', b.dataset.dir === state.directive);
     });
     document.getElementById('btn-expand').textContent = '擴田' + state.expandCost;
+    const si = state.seasonIdx % 4;
+    const tint = document.getElementById('season-tint');
+    if (tint) tint.dataset.season = String(si);
+    const cap = document.getElementById('scene-caption');
+    if (cap) cap.textContent = SEASON_CAPTIONS[si];
+    const soilN = state.plots.filter(p => p.kind === 'soil').length;
+    const lockedN = state.plots.filter(p => p.kind === 'locked').length;
+    const hint = document.getElementById('plot-hint');
+    if (hint) hint.textContent = '已開 ' + soilN + ' 畦 · 可擴 ' + lockedN;
   }
 
-  // ---- Drawing (pixel) ----
-  function drawTile(px, py, kind, plot) {
-    const s = TILE;
-    // base
-    if (kind === 'water' || kind === 'wheel') {
-      ctx.fillStyle = '#29b6f6';
-      ctx.fillRect(px, py, s, s);
-      ctx.fillStyle = '#4fc3f7';
-      for (let i = 0; i < 4; i++) {
-        ctx.fillRect(px + 4 + i * 10, py + 8 + ((i + Math.floor(performance.now() / 200)) % 3) * 4, 8, 3);
-      }
-      if (kind === 'wheel') {
-        ctx.fillStyle = '#6d4c41';
-        ctx.fillRect(px + 18, py + 6, 12, 36);
-        ctx.beginPath();
-        ctx.arc(px + 24, py + 24, 14, 0, Math.PI * 2);
-        ctx.strokeStyle = '#5d4037';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        const ang = (performance.now() / 800) % (Math.PI * 2);
-        for (let i = 0; i < 6; i++) {
-          const a = ang + i * Math.PI / 3;
-          ctx.beginPath();
-          ctx.moveTo(px + 24, py + 24);
-          ctx.lineTo(px + 24 + Math.cos(a) * 12, py + 24 + Math.sin(a) * 12);
-          ctx.stroke();
-        }
-      }
-      return;
-    }
-    if (kind === 'tree') {
-      ctx.fillStyle = '#81c784';
-      ctx.fillRect(px, py, s, s);
-      ctx.fillStyle = '#33691e';
-      ctx.fillRect(px + 18, py + 28, 12, 16);
-      ctx.fillStyle = '#2e7d32';
-      ctx.beginPath();
-      ctx.arc(px + 24, py + 18, 14, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#66bb6a';
-      ctx.beginPath();
-      ctx.arc(px + 16, py + 22, 10, 0, Math.PI * 2);
-      ctx.fill();
-      return;
-    }
-    if (kind === 'house') {
-      ctx.fillStyle = '#a5d6a7';
-      ctx.fillRect(px, py, s, s);
-      // only draw house body on left cell of footprint; right cell path-ish yard
-      if (plot.x === 1) {
-        ctx.fillStyle = '#efebe9';
-        ctx.fillRect(px + 6, py + 16, 36, 26);
-        ctx.fillStyle = '#c62828';
-        ctx.beginPath();
-        ctx.moveTo(px + 4, py + 18);
-        ctx.lineTo(px + 24, py + 4);
-        ctx.lineTo(px + 44, py + 18);
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = '#5d4037';
-        ctx.fillRect(px + 18, py + 28, 10, 14);
-        ctx.fillStyle = '#bbdefb';
-        ctx.fillRect(px + 8, py + 22, 8, 8);
-      } else {
-        ctx.fillStyle = '#d7ccc8';
-        ctx.fillRect(px + 4, py + 20, s - 8, 20);
-        ctx.fillStyle = '#8d6e63';
-        ctx.fillRect(px + 10, py + 10, 8, 10);
-        ctx.fillRect(px + 28, py + 12, 10, 8);
-      }
-      return;
-    }
-    if (kind === 'path') {
-      ctx.fillStyle = '#d7ccc8';
-      ctx.fillRect(px, py, s, s);
-      ctx.fillStyle = '#bcaaa4';
-      for (let i = 0; i < 6; i++) ctx.fillRect(px + 4 + (i % 3) * 14, py + 8 + Math.floor(i / 3) * 18, 10, 8);
-      return;
-    }
-    if (kind === 'locked') {
-      ctx.fillStyle = '#a5d6a7';
-      ctx.fillRect(px, py, s, s);
-      ctx.fillStyle = 'rgba(93,64,55,0.25)';
-      ctx.fillRect(px + 8, py + 8, s - 16, s - 16);
-      ctx.fillStyle = '#5d4037';
-      ctx.font = 'bold 16px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('鎖', px + s / 2, py + s / 2 + 6);
-      return;
-    }
-    if (kind === 'grass') {
-      ctx.fillStyle = '#8bc34a';
-      ctx.fillRect(px, py, s, s);
-      ctx.fillStyle = '#7cb342';
-      for (let i = 0; i < 8; i++) {
-        ctx.fillRect(px + 4 + (i % 4) * 11, py + 6 + Math.floor(i / 4) * 20, 3, 10);
-      }
-      return;
-    }
-    // soil
-    ctx.fillStyle = '#8d6e63';
-    ctx.fillRect(px, py, s, s);
-    ctx.fillStyle = '#6d4c41';
-    ctx.strokeStyle = '#5d4037';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(px + 2, py + 2, s - 4, s - 4);
-    // furrows
-    ctx.fillStyle = '#795548';
-    for (let i = 0; i < 3; i++) ctx.fillRect(px + 6, py + 10 + i * 12, s - 12, 3);
+  // ---- Drawing (compact plot strip over fields art) ----
+  function farmablePlots() {
+    return state.plots
+      .filter(p => p.kind === 'soil' || p.kind === 'locked')
+      .sort((a, b) => (a.y - b.y) || (a.x - b.x));
+  }
 
+  function drawSoilCell(px, py, s, plot) {
+    const pad = 3;
+    const x = px + pad, y = py + pad, w = s - pad * 2, h = s - pad * 2;
+    const r = 8;
+
+    // rounded rect helper
+    function roundRect(fill, stroke, lw) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 2; ctx.stroke(); }
+    }
+
+    if (plot.kind === 'locked') {
+      roundRect('rgba(165,214,167,0.72)', '#5d4037', 2);
+      ctx.fillStyle = 'rgba(93,64,55,0.35)';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('鎖', px + s / 2, py + s / 2);
+      return;
+    }
+
+    // soil base
+    roundRect(plot.watered ? '#6d4c41' : '#8d6e63', '#4e342e', 2);
+    // furrows
+    ctx.fillStyle = 'rgba(62,39,35,0.35)';
+    for (let i = 0; i < 3; i++) {
+      ctx.fillRect(x + 6, y + 10 + i * 12, w - 12, 3);
+    }
     if (plot.watered) {
-      ctx.fillStyle = 'rgba(33,150,243,0.28)';
-      ctx.fillRect(px + 2, py + 2, s - 4, s - 4);
+      ctx.fillStyle = 'rgba(33,150,243,0.32)';
+      ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
     }
 
     if (plot.crop && plot.stage > 0) {
       const c = CROPS[plot.crop];
       const stage = plot.stage;
+      const cx = px + s / 2;
       if (stage === 1) {
-        ctx.fillStyle = '#5d4037';
-        ctx.fillRect(px + 22, py + 28, 4, 8);
+        ctx.fillStyle = '#3e2723';
+        ctx.fillRect(cx - 2, py + s * 0.55, 4, 10);
+        ctx.fillStyle = '#aed581';
+        ctx.beginPath();
+        ctx.arc(cx, py + s * 0.52, 4, 0, Math.PI * 2);
+        ctx.fill();
       } else if (stage === 2) {
         ctx.fillStyle = c.color;
-        ctx.fillRect(px + 20, py + 22, 8, 14);
+        ctx.fillRect(cx - 5, py + s * 0.42, 10, 16);
         ctx.fillStyle = '#2e7d32';
-        ctx.fillRect(px + 16, py + 18, 6, 6);
-        ctx.fillRect(px + 26, py + 18, 6, 6);
+        ctx.beginPath();
+        ctx.ellipse(cx - 8, py + s * 0.45, 6, 4, -0.4, 0, Math.PI * 2);
+        ctx.ellipse(cx + 8, py + s * 0.45, 6, 4, 0.4, 0, Math.PI * 2);
+        ctx.fill();
       } else if (stage === 3) {
         ctx.fillStyle = c.color;
-        for (let i = 0; i < 3; i++) {
-          ctx.fillRect(px + 10 + i * 12, py + 14, 8, 22);
+        for (let i = -1; i <= 1; i++) {
+          ctx.fillRect(cx + i * 12 - 4, py + s * 0.32, 8, 22);
         }
-      } else if (stage >= 4) {
+      } else {
         ctx.fillStyle = c.ripe;
-        for (let i = 0; i < 3; i++) {
-          ctx.fillRect(px + 10 + i * 12, py + 10, 10, 26);
+        for (let i = -1; i <= 1; i++) {
+          ctx.fillRect(cx + i * 12 - 5, py + s * 0.26, 10, 26);
         }
-        // sparkle
         ctx.fillStyle = '#fffde7';
-        ctx.fillRect(px + 14, py + 12, 3, 3);
-        ctx.fillRect(px + 30, py + 16, 3, 3);
+        ctx.fillRect(cx - 10, py + s * 0.3, 3, 3);
+        ctx.fillRect(cx + 8, py + s * 0.36, 3, 3);
       }
-      // label
       ctx.fillStyle = '#212121';
-      ctx.font = 'bold 10px sans-serif';
+      ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(c.name, px + s / 2, py + s - 4);
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(c.name, cx, py + s - 6);
     }
 
     if (selectedPlot && selectedPlot.x === plot.x && selectedPlot.y === plot.y) {
-      ctx.strokeStyle = '#ffeb3b';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(px + 1, py + 1, s - 2, s - 2);
+      roundRect(null, '#ffeb3b', 3);
     }
   }
 
   function drawFarm() {
-    const w = COLS * TILE;
-    const h = ROWS * TILE;
+    if (!state) return;
+    const cells = farmablePlots();
+    const cols = PLOT_COLS;
+    const rows = Math.max(2, Math.ceil(cells.length / cols));
+    const gap = 4;
+    const pad = 8;
+    const s = TILE;
+    const w = pad * 2 + cols * s + (cols - 1) * gap;
+    const h = pad * 2 + rows * s + (rows - 1) * gap;
     if (canvas.width !== w) canvas.width = w;
     if (canvas.height !== h) canvas.height = h;
-    ctx.imageSmoothingEnabled = false;
-    // sky strip already in CSS; fill field bg
-    ctx.fillStyle = '#81c784';
+
+    ctx.clearRect(0, 0, w, h);
+    // soft panel so fields art shows through
+    ctx.fillStyle = 'rgba(255,253,245,0.18)';
     ctx.fillRect(0, 0, w, h);
 
-    for (const p of state.plots) {
-      drawTile(p.x * TILE, p.y * TILE, p.kind, p);
-    }
+    cells.forEach((plot, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const px = pad + col * (s + gap);
+      const py = pad + row * (s + gap);
+      drawSoilCell(px, py, s, plot);
+    });
 
-    // fence around farm area
-    ctx.strokeStyle = '#5d4037';
-    ctx.lineWidth = 2;
+    // stash layout for hit-testing
+    canvas._layout = { cols, rows, gap, pad, s, cells };
   }
 
   function drawTitleArt() {
-    const c = titleCanvas;
-    tctx.imageSmoothingEnabled = false;
-    tctx.fillStyle = '#81c784';
-    tctx.fillRect(0, 0, c.width, c.height);
-    // simple house + field
-    tctx.fillStyle = '#29b6f6';
-    tctx.fillRect(0, 0, c.width, 40);
-    tctx.fillStyle = '#efebe9';
-    tctx.fillRect(40, 50, 50, 40);
-    tctx.fillStyle = '#c62828';
-    tctx.beginPath();
-    tctx.moveTo(35, 55); tctx.lineTo(65, 30); tctx.lineTo(95, 55); tctx.closePath(); tctx.fill();
-    tctx.fillStyle = '#8d6e63';
-    for (let i = 0; i < 4; i++) {
-      tctx.fillRect(120 + i * 36, 70, 30, 40);
-      tctx.fillStyle = '#8bc34a';
-      tctx.fillRect(126 + i * 36, 78, 18, 24);
-      tctx.fillStyle = '#8d6e63';
-    }
-    tctx.fillStyle = '#2e7d32';
-    tctx.font = 'bold 14px sans-serif';
-    tctx.fillText('AUTO', 200, 28);
+    // title uses CSS village background; no canvas
   }
 
   // ---- Gameplay ----
@@ -636,10 +571,22 @@
     const rect = canvas.getBoundingClientRect();
     const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
     const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
-    const x = Math.floor((clientX - rect.left) / rect.width * COLS);
-    const y = Math.floor((clientY - rect.top) / rect.height * ROWS);
-    if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return null;
-    return plotAt(x, y);
+    const layout = canvas._layout;
+    if (!layout) return null;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (clientX - rect.left) * scaleX;
+    const my = (clientY - rect.top) * scaleY;
+    const { cols, gap, pad, s, cells } = layout;
+    const col = Math.floor((mx - pad) / (s + gap));
+    const row = Math.floor((my - pad) / (s + gap));
+    if (col < 0 || row < 0 || col >= cols) return null;
+    // inside cell?
+    const localX = (mx - pad) - col * (s + gap);
+    const localY = (my - pad) - row * (s + gap);
+    if (localX < 0 || localY < 0 || localX > s || localY > s) return null;
+    const idx = row * cols + col;
+    return cells[idx] || null;
   }
 
   function onFarmTap(ev) {

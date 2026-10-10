@@ -1,0 +1,4 @@
+# Do not commit user-provided reference / ad screenshots
+attachments/
+*.facebook*
+*_ad*
