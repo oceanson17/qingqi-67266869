@@ -8,45 +8,48 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="青畦">
 <meta name="format-detection" content="telephone=no,email=no,address=no">
-<meta name="theme-color" content="#5d8a3a">
+<meta name="theme-color" content="#3e2723">
 <title>青畦</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="app">
-  <!-- 標題 -->
   <section id="screen-title" class="screen">
     <div class="title-bg" aria-hidden="true">
       <picture>
-        <source srcset="assets/bg_village.webp" type="image/webp">
-        <img src="assets/bg_village.jpg" alt="" decoding="async">
+        <source srcset="assets/bg_town.webp" type="image/webp">
+        <img src="assets/bg_town.jpg" alt="" decoding="async">
       </picture>
       <div class="title-bg-shade"></div>
     </div>
     <div class="title-content">
       <h1>青畦</h1>
-      <p class="subtitle">種田 · 挖礦 · 釣魚 · AUTO</p>
+      <p class="subtitle">種田 · 挖礦 · 釣魚 · 副本 · AUTO</p>
       <button type="button" class="btn primary" id="btn-start">開始新局</button>
       <button type="button" class="btn" id="btn-continue" hidden>繼續</button>
       <button type="button" class="btn ghost" id="btn-settings-title">設定</button>
-      <p class="hint">開 AUTO，跟住場景自動種／挖／釣</p>
+      <p class="hint">開 AUTO，跟場景自動種／挖／釣／打怪</p>
     </div>
   </section>
 
-  <!-- 遊戲 -->
   <section id="screen-game" class="screen" hidden>
     <header class="hud">
       <div class="hud-left">
-        <button type="button" class="hud-btn" id="btn-bag" title="背包">BAG</button>
-        <button type="button" class="hud-btn" id="btn-quest" title="任務">
-          QUEST<span class="quest-dot" id="quest-dot" hidden></span>
+        <button type="button" class="hud-icon bag" id="btn-bag" title="背包">
+          <span class="hud-icon-glyph" aria-hidden="true">🎒</span>
+          <span class="hud-icon-label">BAG</span>
+        </button>
+        <button type="button" class="hud-icon quest" id="btn-quest" title="任務">
+          <span class="hud-icon-glyph" aria-hidden="true">📜</span>
+          <span class="hud-icon-label">QUEST</span>
+          <span class="quest-dot" id="quest-dot" hidden></span>
         </button>
       </div>
       <div class="hud-mid">
         <span class="pill" id="hud-day">春 · 第1日</span>
-        <span class="pill gold" id="hud-gold">💰 80</span>
-        <span class="pill food" id="hud-food">🌾 12</span>
-        <span class="pill stam" id="hud-stam">⚡ 100</span>
+        <span class="pill gold" id="hud-gold">銀 80</span>
+        <span class="pill food" id="hud-food">糧 12</span>
+        <span class="pill combat" id="hud-combat">HP 80 · ATK 8</span>
       </div>
       <div class="hud-right">
         <button type="button" class="btn-icon" id="btn-menu" title="選單">☰</button>
@@ -58,35 +61,65 @@
       <button type="button" class="mode-tab" data-mode="village">村落</button>
       <button type="button" class="mode-tab" data-mode="mine">礦洞</button>
       <button type="button" class="mode-tab" data-mode="pond">魚塘</button>
+      <button type="button" class="mode-tab" data-mode="dungeon">副本</button>
     </nav>
 
     <div class="scene-wrap">
-      <!-- 村落／礦洞／魚塘共用大場景 -->
       <div class="adventure-scene" id="adventure-scene">
         <picture id="scene-pic">
-          <source id="scene-webp" srcset="assets/bg_village.webp" type="image/webp">
-          <img id="scene-img" src="assets/bg_village.jpg" alt="場景" class="scene-img" decoding="async">
+          <source id="scene-webp" srcset="assets/bg_town.webp" type="image/webp">
+          <img id="scene-img" src="assets/bg_town.jpg" alt="場景" class="scene-img" decoding="async">
         </picture>
         <div class="season-tint" id="season-tint" data-season="0"></div>
         <div class="scene-caption" id="scene-caption">春光滿村</div>
         <div class="scene-action-hint" id="scene-hint"></div>
         <div class="toast" id="toast" hidden></div>
 
-        <!-- 虛擬操作（礦／釣） -->
+        <!-- 戰鬥 HUD -->
+        <div class="battle-hud" id="battle-hud" hidden>
+          <div class="battle-top">
+            <div class="hp-block enemy">
+              <div class="hp-name" id="enemy-name">敵</div>
+              <div class="hp-bar"><div class="hp-fill" id="enemy-hp-fill"></div></div>
+              <div class="hp-num" id="enemy-hp-num">0/0</div>
+            </div>
+            <div class="wave-label" id="wave-label">第 1／3 波</div>
+            <div class="hp-block player">
+              <div class="hp-name">你</div>
+              <div class="hp-bar"><div class="hp-fill player" id="player-hp-fill"></div></div>
+              <div class="hp-num" id="player-hp-num">0/0</div>
+            </div>
+          </div>
+          <div class="battle-log" id="battle-log"></div>
+        </div>
+
         <div class="dpad" id="dpad" hidden>
           <button type="button" class="dpad-btn" data-dir="up">▲</button>
           <button type="button" class="dpad-btn" data-dir="left">◀</button>
           <button type="button" class="dpad-btn" data-dir="right">▶</button>
           <button type="button" class="dpad-btn" data-dir="down">▼</button>
         </div>
+
+        <div class="skill-cluster" id="skill-cluster" hidden>
+          <button type="button" class="skill-btn s1" id="btn-skill1" title="青嵐斬" data-skill="slash">
+            <span class="sk-ico">⚔</span><span class="sk-cd" id="cd-slash"></span>
+          </button>
+          <button type="button" class="skill-btn s2" id="btn-skill2" title="護體" data-skill="guard">
+            <span class="sk-ico">🛡</span><span class="sk-cd" id="cd-guard"></span>
+          </button>
+          <button type="button" class="skill-btn s3" id="btn-skill3" title="爆裂" data-skill="burst">
+            <span class="sk-ico">💥</span><span class="sk-cd" id="cd-burst"></span>
+          </button>
+          <button type="button" class="skill-btn atk" id="btn-attack" title="普通攻擊" data-skill="atk">
+            <span class="sk-ico">🗡</span>
+          </button>
+        </div>
+
         <div class="action-cluster" id="action-cluster" hidden>
-          <button type="button" class="act-btn" id="btn-attack" title="攻擊">攻</button>
-          <button type="button" class="act-btn" id="btn-skill" title="技能">技</button>
           <button type="button" class="act-btn primary" id="btn-interact" title="互動">互</button>
         </div>
       </div>
 
-      <!-- 田畦專用 -->
       <div class="plot-card" id="plot-card">
         <div class="plot-card-head">
           <span class="plot-card-title">田畦</span>
@@ -107,7 +140,6 @@
       <span id="auto-label" class="auto-off">AUTO 關</span>
     </div>
 
-    <!-- 田畦方針／種子 -->
     <div class="farm-only" id="farm-panel">
       <div class="directives" role="group" aria-label="方針">
         <button type="button" class="dir active" data-dir="grain">多種糧</button>
@@ -131,18 +163,17 @@
       </div>
     </div>
 
-    <!-- 村落面板 -->
     <div class="mode-panel" id="village-panel" hidden>
-      <p class="mode-blurb">村落景色 · 可去田畦耕作，或進礦洞、魚塘。</p>
+      <p class="mode-blurb">冒險村落 · 可去田畦、礦洞、魚塘，或挑戰副本。</p>
       <div class="controls village-controls">
         <button type="button" class="btn auto-btn" id="btn-auto-v">AUTO</button>
         <button type="button" class="btn" data-goto="farm">去田畦</button>
         <button type="button" class="btn" data-goto="mine">進礦洞</button>
         <button type="button" class="btn" data-goto="pond">去魚塘</button>
+        <button type="button" class="btn primary" data-goto="dungeon">進副本</button>
       </div>
     </div>
 
-    <!-- 礦洞面板 -->
     <div class="mode-panel" id="mine-panel" hidden>
       <div class="mine-stats">
         <span id="mine-ore-label">礦石 0</span>
@@ -153,11 +184,10 @@
         <button type="button" class="btn auto-btn" id="btn-auto-m">AUTO</button>
         <button type="button" class="btn primary" id="btn-mine">開挖</button>
         <button type="button" class="btn" id="btn-sell-ore">賣礦</button>
-        <button type="button" class="btn" id="btn-rest">歇息 +體力</button>
+        <button type="button" class="btn" id="btn-rest">歇息</button>
       </div>
     </div>
 
-    <!-- 魚塘面板 -->
     <div class="mode-panel" id="pond-panel" hidden>
       <div class="pond-stats">
         <span id="pond-fish-label">魚 0</span>
@@ -168,55 +198,79 @@
         <button type="button" class="btn auto-btn" id="btn-auto-p">AUTO</button>
         <button type="button" class="btn primary" id="btn-fish">拋竿</button>
         <button type="button" class="btn" id="btn-sell-fish">賣魚</button>
-        <button type="button" class="btn" id="btn-rest-p">歇息 +體力</button>
+        <button type="button" class="btn" id="btn-rest-p">歇息</button>
       </div>
+    </div>
+
+    <div class="mode-panel" id="dungeon-panel" hidden>
+      <div class="dungeon-stats">
+        <span id="dung-floor-label">層數 1</span>
+        <span id="dung-best-label">最高 0</span>
+        <span id="dung-gear-label">裝備 0</span>
+      </div>
+      <div class="controls dungeon-controls">
+        <button type="button" class="btn auto-btn" id="btn-auto-d">AUTO</button>
+        <button type="button" class="btn primary" id="btn-enter-dungeon">進入戰鬥</button>
+        <button type="button" class="btn" id="btn-flee" hidden>撤退</button>
+        <button type="button" class="btn" id="btn-next-floor">更深一層</button>
+      </div>
+      <p class="mode-blurb tiny-blurb">打怪掉裝備 · 層數愈深稀有度愈高 · AUTO 可自動戰鬥</p>
     </div>
   </section>
 
-  <!-- 背包 -->
   <div id="modal-bag" class="modal" hidden>
-    <div class="modal-card wide">
-      <h2>背包</h2>
+    <div class="modal-card wide parchment">
+      <h2>背包 · 裝備</h2>
+      <div class="equip-slots" id="equip-slots"></div>
+      <div class="combat-summary" id="combat-summary"></div>
+      <h3 class="bag-section-title">物品</h3>
       <div class="bag-grid" id="bag-grid"></div>
+      <h3 class="bag-section-title">裝備庫</h3>
+      <div class="gear-list" id="gear-list"></div>
       <div class="modal-actions row">
-        <button type="button" class="btn primary" id="btn-bag-sell-all">全部賣掉</button>
+        <button type="button" class="btn primary" id="btn-bag-sell-all">賣材料</button>
         <button type="button" class="btn ghost" id="btn-close-bag">關閉</button>
       </div>
     </div>
   </div>
 
-  <!-- 任務 -->
   <div id="modal-quest" class="modal" hidden>
-    <div class="modal-card wide">
+    <div class="modal-card wide parchment">
       <h2>任務</h2>
       <div class="quest-list" id="quest-list"></div>
       <button type="button" class="btn ghost" id="btn-close-quest">關閉</button>
     </div>
   </div>
 
-  <!-- 成就 -->
   <div id="modal-achieve" class="modal" hidden>
-    <div class="modal-card achieve-card">
-      <div class="achieve-badge">🏆</div>
+    <div class="modal-card achieve-card parchment">
+      <div class="achieve-badge">✦</div>
       <h2>新成就解鎖</h2>
       <p id="achieve-title" class="achieve-title"></p>
       <p id="achieve-body"></p>
-      <button type="button" class="btn primary" id="btn-close-achieve">太好了</button>
+      <button type="button" class="btn primary gold-btn" id="btn-close-achieve">好的</button>
     </div>
   </div>
 
-  <!-- 事件 -->
+  <div id="modal-loot" class="modal" hidden>
+    <div class="modal-card parchment">
+      <h2>戰利品</h2>
+      <p id="loot-body"></p>
+      <div id="loot-gear" class="loot-gear"></div>
+      <button type="button" class="btn primary gold-btn" id="btn-close-loot">收下</button>
+    </div>
+  </div>
+
   <div id="modal-event" class="modal" hidden>
-    <div class="modal-card">
+    <div class="modal-card parchment">
       <h2 id="event-title">事件</h2>
       <p id="event-body"></p>
       <div class="modal-actions" id="event-actions"></div>
     </div>
   </div>
 
-  <!-- 選單 -->
   <div id="modal-menu" class="modal" hidden>
-    <div class="modal-card">
+    <div class="modal-card parchment">
       <h2>選單</h2>
       <button type="button" class="btn" id="btn-save">立即存檔</button>
       <button type="button" class="btn" id="btn-settings-game">設定</button>
@@ -225,9 +279,8 @@
     </div>
   </div>
 
-  <!-- 設定 -->
   <div id="modal-settings" class="modal" hidden>
-    <div class="modal-card">
+    <div class="modal-card parchment">
       <h2>設定</h2>
       <label class="field">AI 供應商（預留）
         <select id="set-provider">
@@ -244,7 +297,7 @@
       <label class="field">API Key（只存本機）
         <input type="password" id="set-key" placeholder="sk-…" autocomplete="off">
       </label>
-      <p class="tiny">v2 用規則 AUTO 跟場景自動種／挖／釣；Key 留給之後 AI 方針。</p>
+      <p class="tiny">v3：副本打怪掉裝備；AUTO 可自動戰鬥。Key 留給之後 AI 方針。</p>
       <button type="button" class="btn primary" id="btn-save-settings">儲存</button>
       <button type="button" class="btn ghost" id="btn-close-settings">關閉</button>
     </div>
