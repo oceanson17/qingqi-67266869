@@ -1,9 +1,10 @@
 # 青畦
 
-自動種田小品。點 AUTO，村會自己播、澆、收、賣；你只定方針。
+像素種田＋挖礦＋釣魚小遊戲。AUTO 跟場景自動種／挖／釣。
 
-- 多種糧／多賺錢／擴田優先／存糧過冬
-- 存檔於本機 localStorage
-- 設定裡 DeepSeek 為預留（v1 用規則 AUTO）
+線上：https://oceanson17.github.io/qingqi-67266869/
 
-開玩：打開 `index.html`，或 GitHub Pages。
+## v2
+- 場景：田畦｜村落｜礦洞｜魚塘
+- BAG／QUEST／體力、挖礦、釣魚、珍魚成就
+- 存檔 `qingqi_v2`（自動遷移 v1）

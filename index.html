@@ -25,11 +25,11 @@
     </div>
     <div class="title-content">
       <h1>青畦</h1>
-      <p class="subtitle">自動種田 · 望住村慢慢好</p>
+      <p class="subtitle">種田 · 挖礦 · 釣魚 · AUTO</p>
       <button type="button" class="btn primary" id="btn-start">開始新局</button>
       <button type="button" class="btn" id="btn-continue" hidden>繼續</button>
       <button type="button" class="btn ghost" id="btn-settings-title">設定</button>
-      <p class="hint">點 AUTO，村會自己播、澆、收、賣</p>
+      <p class="hint">開 AUTO，跟住場景自動種／挖／釣</p>
     </div>
   </section>
 
@@ -37,27 +37,57 @@
   <section id="screen-game" class="screen" hidden>
     <header class="hud">
       <div class="hud-left">
+        <button type="button" class="hud-btn" id="btn-bag" title="背包">BAG</button>
+        <button type="button" class="hud-btn" id="btn-quest" title="任務">
+          QUEST<span class="quest-dot" id="quest-dot" hidden></span>
+        </button>
+      </div>
+      <div class="hud-mid">
         <span class="pill" id="hud-day">春 · 第1日</span>
         <span class="pill gold" id="hud-gold">💰 80</span>
         <span class="pill food" id="hud-food">🌾 12</span>
+        <span class="pill stam" id="hud-stam">⚡ 100</span>
       </div>
       <div class="hud-right">
         <button type="button" class="btn-icon" id="btn-menu" title="選單">☰</button>
       </div>
     </header>
 
+    <nav class="mode-tabs" role="tablist" aria-label="場景">
+      <button type="button" class="mode-tab active" data-mode="farm">田畦</button>
+      <button type="button" class="mode-tab" data-mode="village">村落</button>
+      <button type="button" class="mode-tab" data-mode="mine">礦洞</button>
+      <button type="button" class="mode-tab" data-mode="pond">魚塘</button>
+    </nav>
+
     <div class="scene-wrap">
-      <div class="village-scene" id="village-scene">
-        <picture>
-          <source srcset="assets/bg_village.webp" type="image/webp">
-          <img src="assets/bg_village.jpg" alt="青畦村落" class="village-img" id="village-img" decoding="async">
+      <!-- 村落／礦洞／魚塘共用大場景 -->
+      <div class="adventure-scene" id="adventure-scene">
+        <picture id="scene-pic">
+          <source id="scene-webp" srcset="assets/bg_village.webp" type="image/webp">
+          <img id="scene-img" src="assets/bg_village.jpg" alt="場景" class="scene-img" decoding="async">
         </picture>
         <div class="season-tint" id="season-tint" data-season="0"></div>
         <div class="scene-caption" id="scene-caption">春光滿村</div>
+        <div class="scene-action-hint" id="scene-hint"></div>
         <div class="toast" id="toast" hidden></div>
+
+        <!-- 虛擬操作（礦／釣） -->
+        <div class="dpad" id="dpad" hidden>
+          <button type="button" class="dpad-btn" data-dir="up">▲</button>
+          <button type="button" class="dpad-btn" data-dir="left">◀</button>
+          <button type="button" class="dpad-btn" data-dir="right">▶</button>
+          <button type="button" class="dpad-btn" data-dir="down">▼</button>
+        </div>
+        <div class="action-cluster" id="action-cluster" hidden>
+          <button type="button" class="act-btn" id="btn-attack" title="攻擊">攻</button>
+          <button type="button" class="act-btn" id="btn-skill" title="技能">技</button>
+          <button type="button" class="act-btn primary" id="btn-interact" title="互動">互</button>
+        </div>
       </div>
 
-      <div class="plot-card">
+      <!-- 田畦專用 -->
+      <div class="plot-card" id="plot-card">
         <div class="plot-card-head">
           <span class="plot-card-title">田畦</span>
           <span class="plot-card-hint" id="plot-hint">點畦操作 · AUTO 亦會自動</span>
@@ -77,29 +107,103 @@
       <span id="auto-label" class="auto-off">AUTO 關</span>
     </div>
 
-    <div class="directives" role="group" aria-label="方針">
-      <button type="button" class="dir active" data-dir="grain">多種糧</button>
-      <button type="button" class="dir" data-dir="money">多賺錢</button>
-      <button type="button" class="dir" data-dir="expand">擴田優先</button>
-      <button type="button" class="dir" data-dir="winter">存糧過冬</button>
+    <!-- 田畦方針／種子 -->
+    <div class="farm-only" id="farm-panel">
+      <div class="directives" role="group" aria-label="方針">
+        <button type="button" class="dir active" data-dir="grain">多種糧</button>
+        <button type="button" class="dir" data-dir="money">多賺錢</button>
+        <button type="button" class="dir" data-dir="expand">擴田優先</button>
+        <button type="button" class="dir" data-dir="winter">存糧過冬</button>
+      </div>
+      <div class="controls">
+        <button type="button" class="btn auto-btn" id="btn-auto">AUTO</button>
+        <button type="button" class="btn" id="btn-water-all">全澆</button>
+        <button type="button" class="btn" id="btn-harvest">收成</button>
+        <button type="button" class="btn" id="btn-sell">賣出</button>
+        <button type="button" class="btn" id="btn-expand">擴田</button>
+      </div>
+      <div class="crop-pick" id="crop-pick">
+        <span class="label">種子</span>
+        <button type="button" class="crop-btn active" data-crop="rice">稻</button>
+        <button type="button" class="crop-btn" data-crop="veg">菜</button>
+        <button type="button" class="crop-btn" data-crop="flower">花</button>
+        <button type="button" class="crop-btn" data-crop="wheat">麥</button>
+      </div>
     </div>
 
-    <div class="controls">
-      <button type="button" class="btn auto-btn" id="btn-auto">AUTO</button>
-      <button type="button" class="btn" id="btn-water-all">全澆</button>
-      <button type="button" class="btn" id="btn-harvest">收成</button>
-      <button type="button" class="btn" id="btn-sell">賣出</button>
-      <button type="button" class="btn" id="btn-expand">擴田</button>
+    <!-- 村落面板 -->
+    <div class="mode-panel" id="village-panel" hidden>
+      <p class="mode-blurb">村落景色 · 可去田畦耕作，或進礦洞、魚塘。</p>
+      <div class="controls village-controls">
+        <button type="button" class="btn auto-btn" id="btn-auto-v">AUTO</button>
+        <button type="button" class="btn" data-goto="farm">去田畦</button>
+        <button type="button" class="btn" data-goto="mine">進礦洞</button>
+        <button type="button" class="btn" data-goto="pond">去魚塘</button>
+      </div>
     </div>
 
-    <div class="crop-pick" id="crop-pick">
-      <span class="label">種子</span>
-      <button type="button" class="crop-btn active" data-crop="rice">稻</button>
-      <button type="button" class="crop-btn" data-crop="veg">菜</button>
-      <button type="button" class="crop-btn" data-crop="flower">花</button>
-      <button type="button" class="crop-btn" data-crop="wheat">麥</button>
+    <!-- 礦洞面板 -->
+    <div class="mode-panel" id="mine-panel" hidden>
+      <div class="mine-stats">
+        <span id="mine-ore-label">礦石 0</span>
+        <span id="mine-goldore-label">金礦 0</span>
+        <span id="mine-cd-label">就緒</span>
+      </div>
+      <div class="controls mine-controls">
+        <button type="button" class="btn auto-btn" id="btn-auto-m">AUTO</button>
+        <button type="button" class="btn primary" id="btn-mine">開挖</button>
+        <button type="button" class="btn" id="btn-sell-ore">賣礦</button>
+        <button type="button" class="btn" id="btn-rest">歇息 +體力</button>
+      </div>
+    </div>
+
+    <!-- 魚塘面板 -->
+    <div class="mode-panel" id="pond-panel" hidden>
+      <div class="pond-stats">
+        <span id="pond-fish-label">魚 0</span>
+        <span id="pond-rare-label">珍魚 0</span>
+        <span id="pond-cd-label">就緒</span>
+      </div>
+      <div class="controls pond-controls">
+        <button type="button" class="btn auto-btn" id="btn-auto-p">AUTO</button>
+        <button type="button" class="btn primary" id="btn-fish">拋竿</button>
+        <button type="button" class="btn" id="btn-sell-fish">賣魚</button>
+        <button type="button" class="btn" id="btn-rest-p">歇息 +體力</button>
+      </div>
     </div>
   </section>
+
+  <!-- 背包 -->
+  <div id="modal-bag" class="modal" hidden>
+    <div class="modal-card wide">
+      <h2>背包</h2>
+      <div class="bag-grid" id="bag-grid"></div>
+      <div class="modal-actions row">
+        <button type="button" class="btn primary" id="btn-bag-sell-all">全部賣掉</button>
+        <button type="button" class="btn ghost" id="btn-close-bag">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 任務 -->
+  <div id="modal-quest" class="modal" hidden>
+    <div class="modal-card wide">
+      <h2>任務</h2>
+      <div class="quest-list" id="quest-list"></div>
+      <button type="button" class="btn ghost" id="btn-close-quest">關閉</button>
+    </div>
+  </div>
+
+  <!-- 成就 -->
+  <div id="modal-achieve" class="modal" hidden>
+    <div class="modal-card achieve-card">
+      <div class="achieve-badge">🏆</div>
+      <h2>新成就解鎖</h2>
+      <p id="achieve-title" class="achieve-title"></p>
+      <p id="achieve-body"></p>
+      <button type="button" class="btn primary" id="btn-close-achieve">太好了</button>
+    </div>
+  </div>
 
   <!-- 事件 -->
   <div id="modal-event" class="modal" hidden>
@@ -140,7 +244,7 @@
       <label class="field">API Key（只存本機）
         <input type="password" id="set-key" placeholder="sk-…" autocomplete="off">
       </label>
-      <p class="tiny">v1 用規則 AUTO 已夠玩；Key 留給之後 AI 方針。</p>
+      <p class="tiny">v2 用規則 AUTO 跟場景自動種／挖／釣；Key 留給之後 AI 方針。</p>
       <button type="button" class="btn primary" id="btn-save-settings">儲存</button>
       <button type="button" class="btn ghost" id="btn-close-settings">關閉</button>
     </div>
