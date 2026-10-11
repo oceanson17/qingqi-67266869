@@ -1,7 +1,8 @@
 (() => {
   'use strict';
 
-  const SAVE_KEY = 'qingqi_v3';
+  const SAVE_KEY = 'qingqi_v4';
+  const SAVE_KEY_V3 = 'qingqi_v3';
   const SAVE_KEY_V2 = 'qingqi_v2';
   const SAVE_KEY_V1 = 'qingqi_v1';
   const SETTINGS_KEY = 'qingqi_settings_v1';
@@ -17,14 +18,18 @@
     mine: ['礦洞微涼', '礦脈活躍', '岩層穩固', '洞內靜謐'],
     pond: ['塘面春波', '夏日魚躍', '秋水清澈', '冬塘微凍'],
     dungeon: ['副本入口', '焰影地牢', '深處回響', '寒窟寂靜'],
+    ranch: ['春牧場暖', '夏草豐茂', '秋畜安穩', '冬棚守暖'],
+    craft: ['春日灶香', '夏夜工坊', '秋成料理', '冬爐暖湯'],
   };
-  const ASSET_V = '?v=orig1';
+  const ASSET_V = '?v=v4';
   const SCENE_ART = {
     village: { webp: 'assets/bg_village.webp' + ASSET_V, jpg: 'assets/bg_village.jpg' + ASSET_V, alt: '青畦村落' },
     farm:    { webp: 'assets/bg_fields.webp' + ASSET_V,  jpg: 'assets/bg_fields.jpg' + ASSET_V,  alt: '田畦外景' },
     mine:    { webp: 'assets/bg_mine.webp' + ASSET_V,    jpg: 'assets/bg_mine.jpg' + ASSET_V,    alt: '礦洞' },
     pond:    { webp: 'assets/bg_pond.webp' + ASSET_V,    jpg: 'assets/bg_pond.jpg' + ASSET_V,    alt: '魚塘' },
     dungeon: { webp: 'assets/bg_dungeon.webp' + ASSET_V, jpg: 'assets/bg_dungeon.jpg' + ASSET_V, alt: '副本' },
+    ranch:   { webp: 'assets/bg_fields.webp' + ASSET_V,  jpg: 'assets/bg_fields.jpg' + ASSET_V,  alt: '牧場' },
+    craft:   { webp: 'assets/bg_town.webp' + ASSET_V,    jpg: 'assets/bg_town.jpg' + ASSET_V,    alt: '工坊' },
   };
 
   const SEASONS = ['春', '夏', '秋', '冬'];
@@ -92,12 +97,76 @@
     burst: { name: '爆裂', cd: 7.5, stamina: 8, mult: 2.8 },
   };
 
+  // --- v4: ranch / craft / villagers / buildings / daily orders ---
+  const ANIMAL_DEFS = {
+    chicken: { name: '青羽雞', product: 'egg', productName: '雞蛋', sell: 9, feedNeed: 1, readyDays: 1, unlockGold: 60, icon: '🐔' },
+    cow:     { name: '雲斑牛', product: 'milk', productName: '鮮奶', sell: 16, feedNeed: 2, readyDays: 2, unlockGold: 140, icon: '🐄' },
+  };
+  const RECIPES = [
+    { id: 'riceBall', name: '稻香糰', needs: { rice: 2 }, out: { food: 8 }, gold: 0, heal: 0, desc: '回復存糧' },
+    { id: 'vegSoup', name: '青菜湯', needs: { veg: 2, wheat: 1 }, out: { food: 6 }, gold: 0, heal: 18, desc: '戰鬥回血 18' },
+    { id: 'fishMeal', name: '鮮魚膳', needs: { fish: 1, rice: 1 }, out: { food: 10 }, gold: 0, heal: 28, desc: '戰鬥回血 28' },
+    { id: 'oreBrew', name: '礦泉劑', needs: { ore: 2, flower: 1 }, out: {}, gold: 0, heal: 40, potion: 'oreBrew', desc: '強效藥劑 · 回血 40' },
+    { id: 'eggCake', name: '雞蛋糕', needs: { egg: 2, wheat: 1 }, out: { food: 12 }, gold: 0, heal: 22, desc: '牧場甜點 · 回血 22' },
+    { id: 'milkTea', name: '暖奶飲', needs: { milk: 1, flower: 1 }, out: {}, gold: 0, heal: 35, potion: 'milkTea', desc: '暖身 · 回血 35' },
+  ];
+  const VILLAGERS = [
+    { id: 'lin', name: '林青禾', role: '田間鄰人', likes: ['flower', 'veg', 'egg'], giftBoost: 12, unlockAt: 0, desc: '愛花菜與雞蛋，好感高時種子打折。' },
+    { id: 'shi', name: '石阿鐵', role: '礦道匠人', likes: ['ore', 'goldOre', 'fish'], giftBoost: 14, unlockAt: 0, desc: '愛礦與魚，好感高時賣礦加價。' },
+    { id: 'hua', name: '花小滿', role: '灶邊厨娘', likes: ['rareFish', 'milk', 'flower'], giftBoost: 16, unlockAt: 15, desc: '愛珍魚鮮奶，好感高解鎖料理。' },
+  ];
+  const BUILD_DEFS = {
+    house: { name: '農舍', levels: [
+      { cost: 0, label: '簡陋', maxPlotsBonus: 0, maxStaminaBonus: 0 },
+      { cost: 80, label: '木屋', maxPlotsBonus: 2, maxStaminaBonus: 10 },
+      { cost: 180, label: '青瓦', maxPlotsBonus: 4, maxStaminaBonus: 20 },
+      { cost: 320, label: '大宅', maxPlotsBonus: 6, maxStaminaBonus: 35 },
+    ]},
+    warehouse: { name: '倉廩', levels: [
+      { cost: 0, label: '小倉', bagCap: 40 },
+      { cost: 70, label: '中倉', bagCap: 70 },
+      { cost: 160, label: '大倉', bagCap: 110 },
+      { cost: 280, label: '囤倉', bagCap: 160 },
+    ]},
+    anvil: { name: '鐵砧', levels: [
+      { cost: 0, label: '石砧', reforgeBonus: 0 },
+      { cost: 100, label: '鐵砧', reforgeBonus: 0.08 },
+      { cost: 220, label: '精鋼', reforgeBonus: 0.15 },
+      { cost: 400, label: '玄鐵', reforgeBonus: 0.25 },
+    ]},
+  };
+  const ORDER_POOL = [
+    { need: { rice: 4 }, rewardGold: 40, rewardFood: 2, title: '糧行急單' },
+    { need: { veg: 3 }, rewardGold: 38, rewardFood: 1, title: '菜攤補貨' },
+    { need: { flower: 3 }, rewardGold: 48, rewardFood: 0, title: '花市訂購' },
+    { need: { wheat: 4 }, rewardGold: 36, rewardFood: 2, title: '磨坊麥單' },
+    { need: { ore: 5 }, rewardGold: 42, rewardFood: 0, title: '鐵匠礦料' },
+    { need: { fish: 3 }, rewardGold: 28, rewardFood: 1, title: '漁市活鮮' },
+    { need: { egg: 3 }, rewardGold: 35, rewardFood: 1, title: '点心雞蛋' },
+    { need: { milk: 2 }, rewardGold: 40, rewardFood: 0, title: '奶鋪急單' },
+    { need: { rice: 2, veg: 2 }, rewardGold: 45, rewardFood: 3, title: '客棧配菜' },
+    { need: { flower: 2, ore: 2 }, rewardGold: 55, rewardFood: 0, title: '行商雜貨' },
+  ];
+  const BOSS_DEFS = [
+    { name: '岩層巨鼠王', hp: 120, atk: 11 },
+    { name: '焰窟蝠后', hp: 160, atk: 14 },
+    { name: '熔心石傀', hp: 210, atk: 16 },
+    { name: '影谷狼主', hp: 260, atk: 19 },
+    { name: '炎獄魔將', hp: 340, atk: 24 },
+  ];
+
+
   const QUEST_DEFS = [
     { id: 'harvest_rice', title: '稻米初成', desc: '收成稻米 5 次', target: 5, reward: 30, track: 'riceHarvested' },
     { id: 'mine_ore', title: '礦洞初探', desc: '成功開挖 8 次', target: 8, reward: 40, track: 'minesDone' },
     { id: 'catch_rare', title: '釣上大魚', desc: '釣到珍稀大魚 1 條', target: 1, reward: 60, track: 'rareCaught' },
     { id: 'clear_dungeon', title: '初探副本', desc: '打通副本戰鬥 1 次', target: 1, reward: 80, track: 'dungeonsCleared' },
     { id: 'equip_blue', title: '藍裝加身', desc: '裝備一件藍色或以上裝備', target: 1, reward: 50, track: 'blueEquipped' },
+    { id: 'collect_egg', title: '雞啼初鳴', desc: '收取雞蛋 5 枚', target: 5, reward: 45, track: 'eggsCollected' },
+    { id: 'craft_meal', title: '灶火初燃', desc: '完成料理／藥劑 3 次', target: 3, reward: 50, track: 'craftsDone' },
+    { id: 'friend_hearts', title: '鄉情漸暖', desc: '任一村民好感達 30', target: 1, reward: 60, track: 'friendMilestone' },
+    { id: 'fill_orders', title: '日令達人', desc: '完成每日訂單 3 次', target: 3, reward: 55, track: 'ordersFilled' },
+    { id: 'boss_slayer', title: '層主挑戰', desc: '擊敗層主 1 次', target: 1, reward: 100, track: 'bossesKilled' },
   ];
 
   const canvas = document.getElementById('farm');
@@ -161,12 +230,19 @@
       inventory: {
         rice: 0, veg: 0, flower: 0, wheat: 0,
         ore: 0, goldOre: 0, fish: 0, rareFish: 0,
+        egg: 0, milk: 0, feed: 4,
+        oreBrew: 0, milkTea: 0,
         pickaxe: 1, rod: 1,
       },
       plots,
       expandCost: 45, unlockedCount: unlocked.length, maxPlots: 18,
       eventCooldown: 8, daysSinceEvent: 0, log: [],
-      stats: { riceHarvested: 0, minesDone: 0, rareCaught: 0, fishCaught: 0, dungeonsCleared: 0, blueEquipped: 0, monstersKilled: 0 },
+      stats: {
+        riceHarvested: 0, minesDone: 0, rareCaught: 0, fishCaught: 0,
+        dungeonsCleared: 0, blueEquipped: 0, monstersKilled: 0,
+        eggsCollected: 0, milkCollected: 0, craftsDone: 0,
+        friendMilestone: 0, ordersFilled: 0, bossesKilled: 0,
+      },
       quests: defaultQuests(),
       achievements: {},
       gear: [],
@@ -174,78 +250,129 @@
       dungeonFloor: 1,
       dungeonBest: 0,
       nextGearId: 1,
-      version: 3,
+      ranch: { unlocked: false, animals: [], feedReady: false },
+      buildings: { house: 0, warehouse: 0, anvil: 0 },
+      friendship: { lin: 0, shi: 0, hua: 0 },
+      dailyOrder: null,
+      dailyOrderDay: 0,
+      potions: { oreBrew: 0, milkTea: 0 },
+      version: 4,
     };
   }
 
-  function migrateToV3(raw) {
+  function emptyInv() {
+    return {
+      rice: 0, veg: 0, flower: 0, wheat: 0,
+      ore: 0, goldOre: 0, fish: 0, rareFish: 0,
+      egg: 0, milk: 0, feed: 0, oreBrew: 0, milkTea: 0,
+      pickaxe: 1, rod: 1,
+    };
+  }
+  function syncQuests(rawQuests) {
+    const qmap = {};
+    (rawQuests || []).forEach(q => { qmap[q.id] = q; });
+    return QUEST_DEFS.map(d => qmap[d.id] || { id: d.id, progress: 0, claimed: false });
+  }
+  function migrateToV4(raw) {
     const base = defaultState();
     const merged = Object.assign(base, raw, {
-      version: 3,
+      version: 4,
       stamina: raw.stamina != null ? raw.stamina : 100,
       maxStamina: raw.maxStamina || 100,
       mode: raw.mode || 'farm',
-      stats: Object.assign(base.stats, raw.stats || {}),
-      quests: (raw.quests && raw.quests.length) ? raw.quests : defaultQuests(),
+      stats: Object.assign({}, base.stats, raw.stats || {}),
+      quests: syncQuests(raw.quests),
       achievements: raw.achievements || {},
-      inventory: Object.assign({
-        rice: 0, veg: 0, flower: 0, wheat: 0,
-        ore: 0, goldOre: 0, fish: 0, rareFish: 0, pickaxe: 1, rod: 1,
-      }, raw.inventory || {}),
+      inventory: Object.assign(emptyInv(), raw.inventory || {}),
       gear: Array.isArray(raw.gear) ? raw.gear : [],
       equipped: Object.assign({ weapon: null, armor: null, accessory: null }, raw.equipped || {}),
       dungeonFloor: raw.dungeonFloor || 1,
       dungeonBest: raw.dungeonBest || 0,
       nextGearId: raw.nextGearId || 1,
+      ranch: Object.assign({ unlocked: false, animals: [], feedReady: false }, raw.ranch || {}),
+      buildings: Object.assign({ house: 0, warehouse: 0, anvil: 0 }, raw.buildings || {}),
+      friendship: Object.assign({ lin: 0, shi: 0, hua: 0 }, raw.friendship || {}),
+      dailyOrder: raw.dailyOrder || null,
+      dailyOrderDay: raw.dailyOrderDay || 0,
+      potions: Object.assign({ oreBrew: 0, milkTea: 0 }, raw.potions || {}),
     });
-    const qmap = {};
-    merged.quests.forEach(q => { qmap[q.id] = q; });
-    merged.quests = QUEST_DEFS.map(d => qmap[d.id] || { id: d.id, progress: 0, claimed: false });
+    // sync potions from inventory counts
+    merged.potions.oreBrew = merged.inventory.oreBrew || merged.potions.oreBrew || 0;
+    merged.potions.milkTea = merged.inventory.milkTea || merged.potions.milkTea || 0;
+    applyBuildingBonuses(merged, true);
     return merged;
+  }
+
+  function applyBuildingBonuses(st, silent) {
+    const h = BUILD_DEFS.house.levels[st.buildings.house || 0];
+    const baseMax = 18;
+    st.maxPlots = baseMax + (h.maxPlotsBonus || 0);
+    const baseStam = 100 + (h.maxStaminaBonus || 0);
+    if (!silent) {
+      st.maxStamina = Math.max(st.maxStamina || 100, baseStam);
+    } else {
+      st.maxStamina = Math.max(st.maxStamina || 100, baseStam);
+    }
+  }
+
+  function bagCap() {
+    const w = BUILD_DEFS.warehouse.levels[state.buildings.warehouse || 0];
+    return w.bagCap || 40;
+  }
+  function bagUsed() {
+    let n = 0;
+    const skip = { pickaxe: 1, rod: 1 };
+    for (const [k, v] of Object.entries(state.inventory)) {
+      if (skip[k]) continue;
+      n += (v || 0);
+    }
+    return n;
+  }
+  function canAddInv(amount) {
+    return bagUsed() + (amount || 1) <= bagCap();
   }
 
   function save() {
     if (!state) return;
-    state.version = 3;
+    state.version = 4;
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   }
   function hasSave() {
     try {
-      return !!(localStorage.getItem(SAVE_KEY) || localStorage.getItem(SAVE_KEY_V2) || localStorage.getItem(SAVE_KEY_V1));
+      return !!(localStorage.getItem(SAVE_KEY) || localStorage.getItem(SAVE_KEY_V3) ||
+        localStorage.getItem(SAVE_KEY_V2) || localStorage.getItem(SAVE_KEY_V1));
     } catch { return false; }
   }
   function load() {
     try {
       let raw = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
       if (!raw) {
-        const v2 = JSON.parse(localStorage.getItem(SAVE_KEY_V2) || 'null');
-        if (v2 && v2.plots) {
-          raw = migrateToV3(v2);
-          localStorage.setItem(SAVE_KEY, JSON.stringify(raw));
-        }
-      }
-      if (!raw) {
-        const v1 = JSON.parse(localStorage.getItem(SAVE_KEY_V1) || 'null');
-        if (v1 && v1.plots) {
-          raw = migrateToV3(v1);
-          localStorage.setItem(SAVE_KEY, JSON.stringify(raw));
+        for (const k of [SAVE_KEY_V3, SAVE_KEY_V2, SAVE_KEY_V1]) {
+          const prev = JSON.parse(localStorage.getItem(k) || 'null');
+          if (prev && prev.plots) {
+            raw = migrateToV4(prev);
+            localStorage.setItem(SAVE_KEY, JSON.stringify(raw));
+            break;
+          }
         }
       }
       if (!raw || !raw.plots) return null;
-      if ((raw.version || 1) < 3) raw = migrateToV3(raw);
-      raw.inventory = Object.assign({
-        rice: 0, veg: 0, flower: 0, wheat: 0,
-        ore: 0, goldOre: 0, fish: 0, rareFish: 0, pickaxe: 1, rod: 1,
-      }, raw.inventory || {});
-      raw.stats = Object.assign({
-        riceHarvested: 0, minesDone: 0, rareCaught: 0, fishCaught: 0,
-        dungeonsCleared: 0, blueEquipped: 0, monstersKilled: 0,
-      }, raw.stats || {});
-      if (!raw.quests || !raw.quests.length) raw.quests = defaultQuests();
+      if ((raw.version || 1) < 4) raw = migrateToV4(raw);
       else {
-        const qmap = {};
-        raw.quests.forEach(q => { qmap[q.id] = q; });
-        raw.quests = QUEST_DEFS.map(d => qmap[d.id] || { id: d.id, progress: 0, claimed: false });
+        raw.inventory = Object.assign(emptyInv(), raw.inventory || {});
+        raw.stats = Object.assign({
+          riceHarvested: 0, minesDone: 0, rareCaught: 0, fishCaught: 0,
+          dungeonsCleared: 0, blueEquipped: 0, monstersKilled: 0,
+          eggsCollected: 0, milkCollected: 0, craftsDone: 0,
+          friendMilestone: 0, ordersFilled: 0, bossesKilled: 0,
+        }, raw.stats || {});
+        raw.quests = syncQuests(raw.quests);
+        if (!raw.ranch) raw.ranch = { unlocked: false, animals: [], feedReady: false };
+        if (!raw.buildings) raw.buildings = { house: 0, warehouse: 0, anvil: 0 };
+        if (!raw.friendship) raw.friendship = { lin: 0, shi: 0, hua: 0 };
+        if (raw.dailyOrder === undefined) raw.dailyOrder = null;
+        if (!raw.potions) raw.potions = { oreBrew: 0, milkTea: 0 };
+        applyBuildingBonuses(raw, true);
       }
       if (raw.stamina == null) raw.stamina = 100;
       if (!raw.maxStamina) raw.maxStamina = 100;
@@ -256,7 +383,7 @@
       if (!raw.dungeonFloor) raw.dungeonFloor = 1;
       if (!raw.dungeonBest) raw.dungeonBest = 0;
       if (!raw.nextGearId) raw.nextGearId = 1;
-      raw.version = 3;
+      raw.version = 4;
       return raw;
     } catch { return null; }
   }
@@ -374,7 +501,7 @@
   }
 
   function setMode(mode) {
-    if (!['farm', 'village', 'mine', 'pond', 'dungeon'].includes(mode)) return;
+    if (!['farm', 'village', 'mine', 'pond', 'dungeon', 'ranch', 'craft'].includes(mode)) return;
     if (battle && battle.active && mode !== 'dungeon') {
       toast('戰鬥中不能離開副本，請先撤退');
       return;
@@ -398,6 +525,10 @@
     document.getElementById('mine-panel').hidden = mode !== 'mine';
     document.getElementById('pond-panel').hidden = mode !== 'pond';
     document.getElementById('dungeon-panel').hidden = mode !== 'dungeon';
+    const ranchP = document.getElementById('ranch-panel');
+    const craftP = document.getElementById('craft-panel');
+    if (ranchP) ranchP.hidden = mode !== 'ranch';
+    if (craftP) craftP.hidden = mode !== 'craft';
 
     const inBattle = !!(battle && battle.active);
     const showPad = (mode === 'mine' || mode === 'pond') && !inBattle;
@@ -412,14 +543,20 @@
     const si = state.seasonIdx % 4;
     document.getElementById('scene-caption').textContent = captions[si];
     document.getElementById('season-tint').dataset.season = String(si);
+    updateSeasonBanner();
 
     const status = document.getElementById('status-text');
     if (mode === 'farm') status.textContent = '點田操作，或開 AUTO';
-    else if (mode === 'village') status.textContent = '村落閒逛 · 選去處';
+    else if (mode === 'village') status.textContent = '村落 · 訂單／鄉人／建築';
     else if (mode === 'mine') status.textContent = '開挖採礦 · AUTO 可代勞';
     else if (mode === 'pond') status.textContent = '拋竿釣魚 · AUTO 可代勞';
-    else status.textContent = inBattle ? '戰鬥中！' : '進入副本挑戰 · 打怪掉裝備';
+    else if (mode === 'ranch') status.textContent = '牧場 · 餵食與收取產物';
+    else if (mode === 'craft') status.textContent = '工坊 · 料理與藥劑';
+    else status.textContent = inBattle ? '戰鬥中！' : '進入副本 · 每 5 層有層主';
 
+    if (mode === 'ranch') renderRanch();
+    if (mode === 'craft') renderCraft();
+    if (mode === 'village') renderVillageExtras();
     updateModeStats();
     updateHud();
     if (mode === 'farm') drawFarm();
@@ -436,7 +573,7 @@
     document.getElementById('pond-fish-label').textContent = '魚 ' + (inv.fish || 0);
     document.getElementById('pond-rare-label').textContent = '珍魚 ' + (inv.rareFish || 0);
     document.getElementById('pond-cd-label').textContent = fishCd > 0 ? ('冷卻 ' + fishCd.toFixed(1) + 's') : '就緒';
-    document.getElementById('dung-floor-label').textContent = '層數 ' + state.dungeonFloor;
+    document.getElementById('dung-floor-label').textContent = '層數 ' + state.dungeonFloor + (isBossFloor(state.dungeonFloor) ? '·主' : '');
     document.getElementById('dung-best-label').textContent = '最高 ' + state.dungeonBest;
     document.getElementById('dung-gear-label').textContent = '裝備 ' + state.gear.length;
   }
@@ -447,10 +584,12 @@
     document.getElementById('hud-day').textContent = seasonName() + ' · 第' + state.day + '日';
     document.getElementById('hud-gold').textContent = '銀 ' + state.gold;
     document.getElementById('hud-food').textContent = '糧 ' + state.food;
+    const bagEl = document.getElementById('hud-bagcap');
+    if (bagEl) bagEl.textContent = '倉 ' + bagUsed() + '/' + bagCap();
     const hpNow = battle && battle.active ? battle.playerHp : cs.maxHp;
     document.getElementById('hud-combat').textContent = 'HP ' + Math.floor(hpNow) + ' · ATK ' + cs.atk;
     const al = document.getElementById('auto-label');
-    const modeLabel = { farm: '種田', village: '村落', mine: '挖礦', pond: '釣魚', dungeon: '副本' }[state.mode] || '';
+    const modeLabel = { farm: '種田', village: '村落', mine: '挖礦', pond: '釣魚', dungeon: '副本', ranch: '牧場', craft: '工坊' }[state.mode] || '';
     al.textContent = state.auto
       ? ('AUTO 開 · ' + (state.mode === 'farm' ? DIRS[state.directive].label : modeLabel))
       : 'AUTO 關';
@@ -466,6 +605,7 @@
     const captions = SEASON_CAPTIONS[state.mode] || SEASON_CAPTIONS.village;
     const cap = document.getElementById('scene-caption');
     if (cap) cap.textContent = captions[si];
+    updateSeasonBanner();
     const soilN = state.plots.filter(p => p.kind === 'soil').length;
     const lockedN = state.plots.filter(p => p.kind === 'locked').length;
     const hint = document.getElementById('plot-hint');
@@ -799,8 +939,9 @@
   function plant(plot, cropId) {
     const c = CROPS[cropId];
     if (!c || !canPlant(plot)) return false;
-    if (state.gold < c.seedCost) { toast('銀兩不足（種子 ' + c.seedCost + '）'); return false; }
-    state.gold -= c.seedCost;
+    const cost = Math.max(1, Math.ceil(c.seedCost * seedDiscount()));
+    if (state.gold < cost) { toast('銀兩不夠買種子'); return false; }
+    state.gold -= cost;
     plot.crop = cropId; plot.stage = 1; plot.progress = 0; plot.watered = false; plot.wilt = 0;
     return true;
   }
@@ -889,20 +1030,24 @@
     state.day++;
     if (state.day % 8 === 1 && state.day > 1) {
       state.seasonIdx = (state.seasonIdx + 1) % 4;
-      toast(seasonName() + '到了');
+      toast(seasonName() + '到了 · ' + seasonLabelFull());
     }
-    const eat = 2 + Math.floor(state.unlockedCount / 6);
+    const eat = 2 + Math.floor(state.unlockedCount / 6) + Math.floor((state.ranch.animals || []).length / 2);
     state.food = Math.max(0, state.food - eat);
     if (state.food === 0) toast('存糧見底！快種種糧');
     state.stamina = Math.min(state.maxStamina, state.stamina + 25);
+    ranchDailyTick();
+    ensureDailyOrder();
     state.daysSinceEvent++;
     maybeEvent();
+    updateSeasonBanner();
     save();
   }
   function preferCrop() {
-    for (const id of DIRS[state.directive].prefer) if (state.gold >= CROPS[id].seedCost) return id;
+    const costOf = id => Math.max(1, Math.ceil(CROPS[id].seedCost * seedDiscount()));
+    for (const id of DIRS[state.directive].prefer) if (state.gold >= costOf(id)) return id;
     const ids = Object.keys(CROPS).sort((a, b) => CROPS[a].seedCost - CROPS[b].seedCost);
-    for (const id of ids) if (state.gold >= CROPS[id].seedCost) return id;
+    for (const id of ids) if (state.gold >= costOf(id)) return id;
     return null;
   }
   function autoFarmStep() {
@@ -950,10 +1095,15 @@
   }
   function sellOre() {
     let total = 0;
+    const mult = oreSellBonus();
     for (const id of Object.keys(ORE)) {
-      while ((state.inventory[id] || 0) > 0) { state.inventory[id]--; state.gold += ORE[id].sell; total += ORE[id].sell; }
+      while ((state.inventory[id] || 0) > 0) {
+        state.inventory[id]--;
+        const pay = Math.round(ORE[id].sell * mult);
+        state.gold += pay; total += pay;
+      }
     }
-    toast(total ? ('賣礦 +' + total + ' 銀') : '冇礦可賣'); updateHud(); save();
+    toast(total ? ('賣礦 +' + total + ' 銀' + (mult > 1 ? '（匠人加價）' : '')) : '冇礦可賣'); updateHud(); save();
   }
   function restStamina() {
     if (state.stamina >= state.maxStamina) { toast('體力已滿'); return; }
@@ -998,22 +1148,439 @@
     toast(total ? ('賣魚 +' + total + ' 銀') : '冇魚可賣'); updateHud(); save();
   }
 
+  /* ========== v4 systems ========== */
+  function seasonLabelFull() {
+    return ['春暖', '夏盛', '秋收', '冬藏'][state.seasonIdx % 4] + ' · ' + seasonName();
+  }
+  function updateSeasonBanner() {
+    const el = document.getElementById('season-banner');
+    if (!el) return;
+    el.dataset.season = String(state.seasonIdx % 4);
+    el.textContent = seasonLabelFull() + ' · 第' + state.day + '日';
+  }
+
+  function ensureDailyOrder() {
+    if (state.dailyOrder && state.dailyOrderDay === state.day) return;
+    const pool = ORDER_POOL.slice();
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    state.dailyOrder = {
+      title: pick.title,
+      need: Object.assign({}, pick.need),
+      rewardGold: pick.rewardGold + Math.floor(state.day / 10) * 3,
+      rewardFood: pick.rewardFood,
+      filled: false,
+    };
+    state.dailyOrderDay = state.day;
+  }
+  function canFillOrder() {
+    ensureDailyOrder();
+    const o = state.dailyOrder;
+    if (!o || o.filled) return false;
+    for (const [k, n] of Object.entries(o.need)) {
+      if ((state.inventory[k] || 0) < n) return false;
+    }
+    return true;
+  }
+  function fillDailyOrder(silent) {
+    ensureDailyOrder();
+    const o = state.dailyOrder;
+    if (!o || o.filled) { if (!silent) toast('今日訂單已完成'); return false; }
+    if (!canFillOrder()) { if (!silent) toast('材料未齊'); return false; }
+    for (const [k, n] of Object.entries(o.need)) state.inventory[k] -= n;
+    // friendship discount from Lin
+    let gold = o.rewardGold;
+    if ((state.friendship.lin || 0) >= 40) gold = Math.round(gold * 1.1);
+    state.gold += gold;
+    state.food += o.rewardFood || 0;
+    o.filled = true;
+    bumpQuest('ordersFilled', 1);
+    if (!silent) toast('交單「' + o.title + '」+' + gold + '銀');
+    if (!state.achievements.firstOrder) {
+      state.achievements.firstOrder = true;
+      showAchievement('日令初成', '你完成了第一份村落日令看板訂單。');
+    }
+    updateHud(); save();
+    renderVillageExtras();
+    return true;
+  }
+  function orderNeedText(o) {
+    if (!o) return '';
+    return Object.entries(o.need).map(([k, n]) => {
+      const name = (CROPS[k] && CROPS[k].name) || (ORE[k] && ORE[k].name) || (FISH[k] && FISH[k].name) ||
+        (k === 'egg' ? '雞蛋' : k === 'milk' ? '鮮奶' : k);
+      return name + '×' + n;
+    }).join('、');
+  }
+
+  function unlockRanch() {
+    if (state.ranch.unlocked) { toast('牧場已解鎖'); return; }
+    if (state.gold < 50) { toast('需 50 銀開牧場'); return; }
+    state.gold -= 50;
+    state.ranch.unlocked = true;
+    if (!state.ranch.animals.length) {
+      // starter chicken
+      state.ranch.animals.push({ type: 'chicken', fed: false, progress: 0, ready: false });
+    }
+    toast('牧場開張！有一隻青羽雞');
+    if (!state.achievements.ranchOpen) {
+      state.achievements.ranchOpen = true;
+      showAchievement('牧場初開', '禽舍立起，青羽雞咯咯叫。');
+    }
+    updateHud(); save(); renderRanch();
+  }
+  function buyAnimal(type) {
+    const def = ANIMAL_DEFS[type];
+    if (!def) return;
+    if (!state.ranch.unlocked) { toast('先開牧場'); return; }
+    const cap = 2 + (state.buildings.house || 0);
+    if (state.ranch.animals.length >= cap) { toast('欄位已滿（上限 ' + cap + '）'); return; }
+    if (state.gold < def.unlockGold) { toast('需 ' + def.unlockGold + ' 銀'); return; }
+    state.gold -= def.unlockGold;
+    state.ranch.animals.push({ type, fed: false, progress: 0, ready: false });
+    toast('迎來' + def.name);
+    updateHud(); save(); renderRanch();
+  }
+  function makeFeed() {
+    // 2 wheat or 2 rice -> 3 feed
+    if ((state.inventory.wheat || 0) >= 2) {
+      state.inventory.wheat -= 2;
+      state.inventory.feed = (state.inventory.feed || 0) + 3;
+      toast('磨飼料 +3');
+    } else if ((state.inventory.rice || 0) >= 2) {
+      state.inventory.rice -= 2;
+      state.inventory.feed = (state.inventory.feed || 0) + 3;
+      toast('磨飼料 +3（用稻）');
+    } else {
+      toast('需麥或稻 ×2');
+      return false;
+    }
+    updateHud(); save(); renderRanch();
+    return true;
+  }
+  function feedAllAnimals(silent) {
+    let fed = 0;
+    for (const a of state.ranch.animals) {
+      if (a.ready || a.fed) continue;
+      const def = ANIMAL_DEFS[a.type];
+      const need = def.feedNeed;
+      if ((state.inventory.feed || 0) < need) break;
+      state.inventory.feed -= need;
+      a.fed = true;
+      fed++;
+    }
+    if (!silent) toast(fed ? ('餵食 ' + fed + ' 隻') : '無需餵或飼料不足');
+    if (fed) { updateHud(); save(); renderRanch(); }
+    return fed > 0;
+  }
+  function collectAnimalProducts(silent) {
+    let got = 0;
+    for (const a of state.ranch.animals) {
+      if (!a.ready) continue;
+      const def = ANIMAL_DEFS[a.type];
+      if (!canAddInv(1)) { if (!silent) toast('倉廩已滿'); break; }
+      state.inventory[def.product] = (state.inventory[def.product] || 0) + 1;
+      if (def.product === 'egg') bumpQuest('eggsCollected', 1);
+      if (def.product === 'milk') state.stats.milkCollected = (state.stats.milkCollected || 0) + 1;
+      a.ready = false; a.fed = false; a.progress = 0;
+      got++;
+    }
+    if (!silent) toast(got ? ('收取產物 ×' + got) : '暫無可收');
+    if (got) { updateHud(); save(); renderRanch(); }
+    return got > 0;
+  }
+  function ranchDailyTick() {
+    if (!state.ranch || !state.ranch.animals) return;
+    for (const a of state.ranch.animals) {
+      const def = ANIMAL_DEFS[a.type];
+      if (!def) continue;
+      if (a.ready) continue;
+      if (a.fed) {
+        a.progress = (a.progress || 0) + 1;
+        if (a.progress >= def.readyDays) {
+          a.ready = true; a.fed = false; a.progress = 0;
+        }
+      }
+    }
+  }
+  function sellRanchGoods() {
+    let total = 0;
+    for (const id of ['egg', 'milk']) {
+      const price = id === 'egg' ? ANIMAL_DEFS.chicken.sell : ANIMAL_DEFS.cow.sell;
+      while ((state.inventory[id] || 0) > 0) {
+        state.inventory[id]--;
+        state.gold += price;
+        total += price;
+      }
+    }
+    toast(total ? ('賣蛋奶 +' + total + '銀') : '冇蛋奶可賣');
+    updateHud(); save(); renderRanch();
+  }
+  function renderRanch() {
+    const box = document.getElementById('ranch-list');
+    if (!box) return;
+    const feedN = state.inventory.feed || 0;
+    document.getElementById('ranch-feed-label').textContent = '飼料 ' + feedN;
+    document.getElementById('ranch-unlock-row').hidden = !!state.ranch.unlocked;
+    document.getElementById('ranch-actions').hidden = !state.ranch.unlocked;
+    box.innerHTML = '';
+    if (!state.ranch.unlocked) {
+      box.innerHTML = '<p class="tiny" style="text-align:center">花費 50 銀開設牧場，飼養青羽雞與雲斑牛。</p>';
+      return;
+    }
+    if (!state.ranch.animals.length) {
+      box.innerHTML = '<p class="tiny" style="text-align:center">欄空空 · 買一隻動物吧</p>';
+    }
+    state.ranch.animals.forEach((a, i) => {
+      const def = ANIMAL_DEFS[a.type];
+      const div = document.createElement('div');
+      div.className = 'ranch-card' + (a.ready ? ' ready' : '');
+      const st = a.ready ? ('可收 ' + def.productName) : (a.fed ? ('成長 ' + (a.progress || 0) + '/' + def.readyDays) : '待餵');
+      div.innerHTML = '<div class="rc-ico">' + def.icon + '</div><div class="rc-body"><div class="rc-name">' +
+        def.name + '</div><div class="rc-st">' + st + '</div></div>';
+      box.appendChild(div);
+    });
+  }
+
+  function itemDisplayName(id) {
+    if (CROPS[id]) return CROPS[id].name;
+    if (ORE[id]) return ORE[id].name;
+    if (FISH[id]) return FISH[id].name;
+    const map = { egg: '雞蛋', milk: '鮮奶', feed: '飼料', oreBrew: '礦泉劑', milkTea: '暖奶飲' };
+    return map[id] || id;
+  }
+  function canCraft(recipe) {
+    for (const [k, n] of Object.entries(recipe.needs)) {
+      if ((state.inventory[k] || 0) < n) return false;
+    }
+    return true;
+  }
+  function doCraft(recipeId, silent) {
+    const recipe = RECIPES.find(r => r.id === recipeId);
+    if (!recipe) return false;
+    // friendship unlock for milkTea / eggCake via Hua
+    if ((recipe.id === 'milkTea' || recipe.id === 'eggCake') && (state.friendship.hua || 0) < 20) {
+      if (!silent) toast('需花小滿好感 ≥20');
+      return false;
+    }
+    if (!canCraft(recipe)) { if (!silent) toast('材料不足'); return false; }
+    if (!canAddInv(1) && (recipe.potion || recipe.out.food)) {
+      // food goes to food bar not bag; potions need bag
+      if (recipe.potion && !canAddInv(1)) { if (!silent) toast('倉廩已滿'); return false; }
+    }
+    for (const [k, n] of Object.entries(recipe.needs)) state.inventory[k] -= n;
+    if (recipe.out.food) state.food += recipe.out.food;
+    if (recipe.potion) {
+      state.inventory[recipe.potion] = (state.inventory[recipe.potion] || 0) + 1;
+      state.potions[recipe.potion] = (state.potions[recipe.potion] || 0) + 1;
+    }
+    bumpQuest('craftsDone', 1);
+    if (!silent) toast('製成「' + recipe.name + '」');
+    if (!state.achievements.firstCraft) {
+      state.achievements.firstCraft = true;
+      showAchievement('灶火初燃', '你做出第一道「' + recipe.name + '」。');
+    }
+    updateHud(); save(); renderCraft();
+    return true;
+  }
+  function usePotionInBattle(id) {
+    if (!battle || !battle.active) { toast('戰鬥中才能用藥'); return; }
+    if ((state.inventory[id] || 0) <= 0) { toast('沒有藥劑'); return; }
+    const heal = id === 'oreBrew' ? 40 : id === 'milkTea' ? 35 : 0;
+    if (!heal) return;
+    state.inventory[id]--;
+    state.potions[id] = Math.max(0, (state.potions[id] || 0) - 1);
+    battle.playerHp = Math.min(battle.playerMaxHp, battle.playerHp + heal);
+    battle.log = '服用藥劑，回復 ' + heal + ' HP';
+    showHint('+' + heal + 'HP');
+    updateBattleHud(); updateHud(); save();
+  }
+  function renderCraft() {
+    const box = document.getElementById('craft-list');
+    if (!box) return;
+    box.innerHTML = '';
+    RECIPES.forEach(r => {
+      const locked = (r.id === 'milkTea' || r.id === 'eggCake') && (state.friendship.hua || 0) < 20;
+      const div = document.createElement('div');
+      div.className = 'craft-card' + (locked ? ' locked' : '');
+      const need = Object.entries(r.needs).map(([k, n]) => itemDisplayName(k) + '×' + n).join(' · ');
+      div.innerHTML = '<div class="cc-name">' + r.name + (locked ? ' 🔒' : '') + '</div>' +
+        '<div class="cc-need">' + need + '</div>' +
+        '<div class="cc-desc">' + r.desc + '</div>';
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'btn'; btn.textContent = locked ? '未解鎖' : '製作';
+      btn.disabled = locked;
+      btn.onclick = () => doCraft(r.id, false);
+      div.appendChild(btn);
+      box.appendChild(div);
+    });
+  }
+
+  function giftVillager(vid, itemId) {
+    const v = VILLAGERS.find(x => x.id === vid);
+    if (!v) return;
+    if ((state.friendship[vid] || 0) === 0 && v.unlockAt && state.day < v.unlockAt && (state.friendship.lin || 0) < 10) {
+      // soft unlock by day or lin friendship
+    }
+    if ((state.inventory[itemId] || 0) <= 0) { toast('沒有這件禮物'); return; }
+    state.inventory[itemId]--;
+    const liked = v.likes.includes(itemId);
+    const gain = liked ? v.giftBoost : 4;
+    state.friendship[vid] = Math.min(100, (state.friendship[vid] || 0) + gain);
+    toast(v.name + (liked ? '很喜歡！' : '收下了') + ' 好感+' + gain);
+    if (state.friendship[vid] >= 30 && !(state.stats.friendMilestone)) {
+      bumpQuest('friendMilestone', 1);
+    }
+    // check any >= 30
+    if (Object.values(state.friendship).some(n => n >= 30)) {
+      const q = state.quests.find(x => x.id === 'friend_hearts');
+      if (q && q.progress < 1) bumpQuest('friendMilestone', 1);
+    }
+    if (state.friendship[vid] >= 50 && !state.achievements['friend_' + vid]) {
+      state.achievements['friend_' + vid] = true;
+      showAchievement('深交 · ' + v.name, v.name + '視你為可信之人。');
+    }
+    updateHud(); save(); renderVillageExtras();
+  }
+  function seedDiscount() {
+    return (state.friendship.lin || 0) >= 40 ? 0.85 : 1;
+  }
+  function oreSellBonus() {
+    return (state.friendship.shi || 0) >= 40 ? 1.15 : 1;
+  }
+  function upgradeBuilding(key) {
+    const def = BUILD_DEFS[key];
+    if (!def) return;
+    const cur = state.buildings[key] || 0;
+    if (cur >= def.levels.length - 1) { toast(def.name + '已滿級'); return; }
+    const next = def.levels[cur + 1];
+    if (state.gold < next.cost) { toast('需 ' + next.cost + ' 銀'); return; }
+    state.gold -= next.cost;
+    state.buildings[key] = cur + 1;
+    applyBuildingBonuses(state, false);
+    toast(def.name + '升至「' + next.label + '」');
+    if (key === 'house' && state.buildings.house >= 1 && !state.achievements.houseUp) {
+      state.achievements.houseUp = true;
+      showAchievement('農舍煥新', '木屋落成，可開更多田畦。');
+    }
+    updateHud(); save(); renderVillageExtras();
+  }
+  function reforgeGear(gearId) {
+    const g = state.gear.find(x => x.id === gearId);
+    if (!g) return;
+    const anvilLv = state.buildings.anvil || 0;
+    if (anvilLv < 1) { toast('需先升級鐵砧'); return; }
+    const cost = 25 + RARITY_ORDER.indexOf(g.rarity) * 15;
+    if (state.gold < cost) { toast('重鑄需 ' + cost + ' 銀'); return; }
+    if ((state.inventory.ore || 0) < 2) { toast('需礦石 ×2'); return; }
+    state.gold -= cost;
+    state.inventory.ore -= 2;
+    const bonus = BUILD_DEFS.anvil.levels[anvilLv].reforgeBonus || 0.08;
+    g.atk = Math.round(g.atk * (1 + bonus));
+    g.def = Math.round(g.def * (1 + bonus));
+    g.hp = Math.round(g.hp * (1 + bonus));
+    g.sell = Math.round(g.sell * (1 + bonus * 0.5));
+    toast('重鑄完成！屬性提升');
+    updateHud(); save(); renderBag();
+  }
+
+  function renderVillageExtras() {
+    ensureDailyOrder();
+    const orderBox = document.getElementById('order-board');
+    if (orderBox) {
+      const o = state.dailyOrder;
+      if (!o) orderBox.innerHTML = '';
+      else {
+        orderBox.innerHTML =
+          '<div class="order-title">📋 ' + o.title + (o.filled ? ' ✅' : '') + '</div>' +
+          '<div class="order-need">需：' + orderNeedText(o) + '</div>' +
+          '<div class="order-reward">酬：' + o.rewardGold + '銀' +
+            (o.rewardFood ? (' · 糧+' + o.rewardFood) : '') + '</div>';
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'btn primary';
+        btn.textContent = o.filled ? '已交貨' : '交貨';
+        btn.disabled = !!o.filled;
+        btn.onclick = () => fillDailyOrder(false);
+        orderBox.appendChild(btn);
+      }
+    }
+    const vbox = document.getElementById('villager-list');
+    if (vbox) {
+      vbox.innerHTML = '';
+      VILLAGERS.forEach(v => {
+        const hearts = state.friendship[v.id] || 0;
+        const div = document.createElement('div');
+        div.className = 'villager-card';
+        div.innerHTML = '<div class="v-name">' + v.name + ' · ' + v.role + '</div>' +
+          '<div class="v-hearts">好感 ' + hearts + '/100</div>' +
+          '<div class="v-desc">' + v.desc + '</div>';
+        const gifts = document.createElement('div');
+        gifts.className = 'v-gifts';
+        v.likes.forEach(id => {
+          const b = document.createElement('button');
+          b.type = 'button'; b.className = 'btn tiny-btn';
+          b.textContent = '送' + itemDisplayName(id) + '(' + (state.inventory[id] || 0) + ')';
+          b.onclick = () => giftVillager(v.id, id);
+          gifts.appendChild(b);
+        });
+        div.appendChild(gifts);
+        vbox.appendChild(div);
+      });
+    }
+    const bbox = document.getElementById('build-list');
+    if (bbox) {
+      bbox.innerHTML = '';
+      for (const key of ['house', 'warehouse', 'anvil']) {
+        const def = BUILD_DEFS[key];
+        const lv = state.buildings[key] || 0;
+        const cur = def.levels[lv];
+        const next = def.levels[lv + 1];
+        const div = document.createElement('div');
+        div.className = 'build-card';
+        div.innerHTML = '<div class="b-name">' + def.name + ' · ' + cur.label + '（Lv' + lv + '）</div>' +
+          '<div class="b-desc">' + (key === 'house' ? ('田上限 ' + state.maxPlots + ' · 體力上限 ' + state.maxStamina) :
+            key === 'warehouse' ? ('倉容 ' + bagCap()) : ('重鑄加成 ' + Math.round((cur.reforgeBonus || 0) * 100) + '%')) + '</div>';
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'btn';
+        if (!next) { btn.textContent = '滿級'; btn.disabled = true; }
+        else {
+          btn.textContent = '升級 ' + next.cost + '銀 → ' + next.label;
+          btn.onclick = () => upgradeBuilding(key);
+        }
+        div.appendChild(btn);
+        bbox.appendChild(div);
+      }
+    }
+  }
+
+  function isBossFloor(floor) {
+    return floor > 0 && floor % 5 === 0;
+  }
+
   function makeEnemy(floor, wave) {
+    if (isBossFloor(floor) && wave === 1) {
+      const bi = Math.min(BOSS_DEFS.length - 1, Math.floor(floor / 5) - 1);
+      const base = BOSS_DEFS[bi];
+      const scale = 1 + (floor - 1) * 0.18;
+      const hp = Math.round(base.hp * scale);
+      return { name: '【層主】' + base.name, hp, maxHp: hp, atk: Math.round(base.atk * scale), boss: true };
+    }
     const idx = Math.min(ENEMIES.length - 1, Math.floor((floor - 1) * 0.7 + (wave - 1) * 0.5 + Math.random() * 1.5));
     const base = ENEMIES[idx];
     const scale = 1 + (floor - 1) * 0.22 + (wave - 1) * 0.08;
     const hp = Math.round(base.hp * scale);
-    return { name: base.name + (floor >= 4 ? '·精英' : ''), hp, maxHp: hp, atk: Math.round(base.atk * scale) };
+    return { name: base.name + (floor >= 4 ? '·精英' : ''), hp, maxHp: hp, atk: Math.round(base.atk * scale), boss: false };
   }
   function startBattle() {
     if (battle && battle.active) return;
     if (state.stamina < 10) { toast('體力不足（需 10）'); return; }
     state.stamina -= 10;
-    const waves = 3 + Math.floor(Math.random() * 3);
+    const floor = state.dungeonFloor;
+    const boss = isBossFloor(floor);
+    const waves = boss ? 1 + Math.floor(Math.random() * 2) : (3 + Math.floor(Math.random() * 3));
     const cs = combatStats();
-    const enemy = makeEnemy(state.dungeonFloor, 1);
+    const enemy = makeEnemy(floor, 1);
     battle = {
-      active: true, floor: state.dungeonFloor, wave: 1, maxWaves: waves,
+      active: true, floor, wave: 1, maxWaves: waves, isBoss: boss,
       enemy, playerHp: cs.maxHp, playerMaxHp: cs.maxHp,
       lootSilver: 0, lootGear: [], log: '遭遇 ' + enemy.name + '！',
     };
@@ -1021,7 +1588,7 @@
     guardUntil = 0;
     setMode('dungeon');
     updateBattleHud();
-    toast('進入第 ' + battle.floor + ' 層 · ' + waves + ' 波');
+    toast(boss ? ('【層主】第 ' + floor + ' 層！') : ('進入第 ' + floor + ' 層 · ' + waves + ' 波'));
     save();
   }
   function endBattle(won) {
@@ -1038,10 +1605,25 @@
     if (won) {
       bumpQuest('dungeonsCleared', 1);
       if (floor > state.dungeonBest) state.dungeonBest = floor;
-      if (Math.random() < 0.55) lootGear.push(createGear(floor));
-      const bonus = 15 + floor * 8 + Math.floor(Math.random() * 10);
+      const wasBoss = isBossFloor(floor);
+      if (wasBoss) {
+        bumpQuest('bossesKilled', 1);
+        lootGear.push(createGear(floor + 2));
+        if (Math.random() < 0.7) lootGear.push(createGear(floor + 1));
+        if (!state.achievements.firstBoss) {
+          state.achievements.firstBoss = true;
+          showAchievement('層主首捷', '你擊敗了第 ' + floor + ' 層的層主！');
+        }
+        if (floor >= 10 && !state.achievements.boss10) {
+          state.achievements.boss10 = true;
+          showAchievement('十層之巔', '層主連破，聲名遠播至第 10 層。');
+        }
+      } else if (Math.random() < 0.55) {
+        lootGear.push(createGear(floor));
+      }
+      const bonus = 15 + floor * 8 + Math.floor(Math.random() * 10) + (wasBoss ? floor * 12 : 0);
       state.gold += lootSilver + bonus;
-      showLootModal(lootSilver + bonus, lootGear, '通關第 ' + floor + ' 層！');
+      showLootModal(lootSilver + bonus, lootGear, (wasBoss ? '擊敗層主！第 ' : '通關第 ') + floor + ' 層！');
       toast('勝利！+' + (lootSilver + bonus) + ' 銀');
     } else {
       const loss = Math.min(state.gold, 5 + floor * 2);
@@ -1192,13 +1774,49 @@
   }
 
 
+  function autoCraftBasics() {
+    // prefer healing potions / food when low
+    if (state.food < 15 && canCraft(RECIPES[0])) { doCraft('riceBall', true); return true; }
+    if ((state.inventory.oreBrew || 0) < 2 && canCraft(RECIPES.find(r => r.id === 'oreBrew'))) {
+      doCraft('oreBrew', true); return true;
+    }
+    if ((state.friendship.hua || 0) >= 20) {
+      const r = RECIPES.find(x => x.id === 'eggCake');
+      if (r && canCraft(r) && state.food < 25) { doCraft('eggCake', true); return true; }
+    }
+    return false;
+  }
+  function autoRanchStep() {
+    if (!state.ranch.unlocked) {
+      if (state.gold >= 50) { unlockRanch(); return; }
+      document.getElementById('status-text').textContent = 'AUTO：存銀開牧場';
+      return;
+    }
+    if (collectAnimalProducts(true)) {
+      document.getElementById('status-text').textContent = 'AUTO：收取蛋奶';
+      return;
+    }
+    if ((state.inventory.feed || 0) < 2) makeFeed();
+    if (feedAllAnimals(true)) {
+      document.getElementById('status-text').textContent = 'AUTO：餵食牲口';
+      return;
+    }
+    if ((state.inventory.egg || 0) + (state.inventory.milk || 0) >= 3) sellRanchGoods();
+    document.getElementById('status-text').textContent = 'AUTO：牧場待命';
+  }
   function autoStep() {
     if (!state.auto) return;
     if (!document.getElementById('modal-event').hidden) return;
     if (!document.getElementById('modal-achieve').hidden) return;
     if (!document.getElementById('modal-loot').hidden) return;
-    if (state.mode === 'farm') autoFarmStep();
-    else if (state.mode === 'mine') {
+    if (state.mode === 'farm') {
+      autoFarmStep();
+      if (Math.random() < 0.25) autoCraftBasics();
+      if (state.ranch.unlocked && Math.random() < 0.2) {
+        collectAnimalProducts(true);
+        feedAllAnimals(true);
+      }
+    } else if (state.mode === 'mine') {
       if (state.stamina < 8) {
         state.stamina = Math.min(state.maxStamina, state.stamina + 12);
         document.getElementById('status-text').textContent = 'AUTO：歇息回體力';
@@ -1209,7 +1827,7 @@
       if (state.gold < 20 && (state.inventory.ore || 0) > 5) {
         const sellN = Math.min(3, state.inventory.ore);
         state.inventory.ore -= sellN;
-        state.gold += sellN * ORE.ore.sell;
+        state.gold += Math.round(sellN * ORE.ore.sell * oreSellBonus());
       }
     } else if (state.mode === 'pond') {
       if (state.stamina < 6) {
@@ -1221,15 +1839,32 @@
       }
     } else if (state.mode === 'village') {
       state.stamina = Math.min(state.maxStamina, state.stamina + 2);
-      document.getElementById('status-text').textContent = 'AUTO：村中閒逛';
+      if (canFillOrder()) { fillDailyOrder(true); document.getElementById('status-text').textContent = 'AUTO：交日令'; }
+      else if (autoCraftBasics()) document.getElementById('status-text').textContent = 'AUTO：工坊備料';
+      else if (state.ranch.unlocked) { collectAnimalProducts(true); feedAllAnimals(true); document.getElementById('status-text').textContent = 'AUTO：村務／牧場'; }
+      else document.getElementById('status-text').textContent = 'AUTO：村中調度';
+    } else if (state.mode === 'ranch') {
+      autoRanchStep();
+    } else if (state.mode === 'craft') {
+      if (autoCraftBasics()) document.getElementById('status-text').textContent = 'AUTO：製作中';
+      else {
+        sellSurplus(DIRS[state.directive].sellFoodKeep);
+        document.getElementById('status-text').textContent = 'AUTO：工坊待命';
+      }
     } else if (state.mode === 'dungeon') {
+      // use potion if low HP
+      if (battle && battle.active && battle.playerHp < battle.playerMaxHp * 0.35) {
+        if ((state.inventory.oreBrew || 0) > 0) usePotionInBattle('oreBrew');
+        else if ((state.inventory.milkTea || 0) > 0) usePotionInBattle('milkTea');
+      }
       autoDungeonStep();
     }
   }
   function toggleAuto() {
     state.auto = !state.auto;
     const modeLabel = {
-      farm: DIRS[state.directive].label, village: '村落', mine: '挖礦', pond: '釣魚', dungeon: '副本',
+      farm: DIRS[state.directive].label, village: '村落', mine: '挖礦', pond: '釣魚',
+      dungeon: '副本', ranch: '牧場', craft: '工坊',
     }[state.mode];
     toast(state.auto ? ('AUTO 開：' + modeLabel) : 'AUTO 關');
     updateHud(); save();
@@ -1300,6 +1935,31 @@
         { label: '先顧農事', fn: () => { toast('田事為重'); } },
       ],
     },
+    {
+      id: 'ranch_fair', title: '村集禽市', body: '今日村集收購雞蛋與鮮奶，出價不錯。',
+      choices: [
+        { label: '全數賣出（高價）', fn: () => {
+          let g = 0;
+          while ((state.inventory.egg || 0) > 0) { state.inventory.egg--; state.gold += 14; g += 14; }
+          while ((state.inventory.milk || 0) > 0) { state.inventory.milk--; state.gold += 24; g += 24; }
+          toast(g ? ('禽市付款 +' + g) : '冇蛋奶可賣');
+        } },
+        { label: '留著自用', fn: () => { toast('產物入倉'); } },
+      ],
+    },
+    {
+      id: 'order_rush', title: '日令加急', body: '看板出現加急訂單，完成可額外得銀。',
+      choices: [
+        { label: '接急單（刷新今日訂單＋獎勵）', fn: () => {
+          state.dailyOrderDay = -1;
+          ensureDailyOrder();
+          if (state.dailyOrder) state.dailyOrder.rewardGold = Math.round(state.dailyOrder.rewardGold * 1.35);
+          toast('急單已掛上看板');
+          renderVillageExtras();
+        } },
+        { label: '不忙', fn: () => { toast('按兵不動'); } },
+      ],
+    },
   ];
 
   function maybeEvent() {
@@ -1344,12 +2004,17 @@
     }
     for (const id of Object.keys(ORE)) {
       const n = inv[id] || 0;
-      if (n > 0) list.push({ id, name: ORE[id].name, count: n, sell: ORE[id].sell });
+      if (n > 0) list.push({ id, name: ORE[id].name, count: n, sell: Math.round(ORE[id].sell * oreSellBonus()) });
     }
     for (const id of Object.keys(FISH)) {
       const n = inv[id] || 0;
       if (n > 0) list.push({ id, name: FISH[id].name, count: n, sell: FISH[id].sell });
     }
+    if ((inv.egg || 0) > 0) list.push({ id: 'egg', name: '雞蛋', count: inv.egg, sell: ANIMAL_DEFS.chicken.sell });
+    if ((inv.milk || 0) > 0) list.push({ id: 'milk', name: '鮮奶', count: inv.milk, sell: ANIMAL_DEFS.cow.sell });
+    if ((inv.feed || 0) > 0) list.push({ id: 'feed', name: '飼料', count: inv.feed, sell: 0 });
+    if ((inv.oreBrew || 0) > 0) list.push({ id: 'oreBrew', name: '礦泉劑', count: inv.oreBrew, sell: 12 });
+    if ((inv.milkTea || 0) > 0) list.push({ id: 'milkTea', name: '暖奶飲', count: inv.milkTea, sell: 10 });
     if ((inv.pickaxe || 0) > 0) list.push({ id: 'pickaxe', name: '鶴嘴鋤', count: inv.pickaxe, sell: 0 });
     if ((inv.rod || 0) > 0) list.push({ id: 'rod', name: '釣竿', count: inv.rod, sell: 0 });
     return list;
@@ -1448,6 +2113,16 @@
             updateHud(); save(); renderBag();
           };
           div.appendChild(sell);
+        }
+        if ((state.buildings.anvil || 0) >= 1) {
+          const rf = document.createElement('button');
+          rf.type = 'button'; rf.className = 'g-act'; rf.textContent = '重鑄';
+          rf.style.background = '#e3f2fd';
+          rf.onclick = () => {
+            if (!confirm('重鑄「' + g.name + '」？耗銀與礦石')) return;
+            reforgeGear(g.id);
+          };
+          div.appendChild(rf);
         }
         glist.appendChild(div);
       });
@@ -1586,6 +2261,7 @@
     document.getElementById('btn-start').onclick = () => {
       if (hasSave() && !confirm('開始新局會覆蓋存檔，確定？')) return;
       localStorage.removeItem(SAVE_KEY);
+      localStorage.removeItem(SAVE_KEY_V3);
       localStorage.removeItem(SAVE_KEY_V2);
       localStorage.removeItem(SAVE_KEY_V1);
       startGame(false);
@@ -1594,8 +2270,9 @@
     document.getElementById('btn-continue').hidden = !hasSave();
     document.querySelectorAll('.mode-tab').forEach(tab => { tab.onclick = () => setMode(tab.dataset.mode); });
     document.querySelectorAll('[data-goto]').forEach(b => { b.onclick = () => setMode(b.dataset.goto); });
-    ['btn-auto', 'btn-auto-v', 'btn-auto-m', 'btn-auto-p', 'btn-auto-d'].forEach(id => {
-      document.getElementById(id).onclick = toggleAuto;
+    ['btn-auto', 'btn-auto-v', 'btn-auto-m', 'btn-auto-p', 'btn-auto-d', 'btn-auto-r', 'btn-auto-c'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.onclick = toggleAuto;
     });
     document.querySelectorAll('.dir').forEach(b => {
       b.onclick = () => {
@@ -1637,6 +2314,19 @@
         updateHud();
       };
     });
+    const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
+    bind('btn-unlock-ranch', unlockRanch);
+    bind('btn-make-feed', makeFeed);
+    bind('btn-feed-all', () => feedAllAnimals(false));
+    bind('btn-collect-ranch', () => collectAnimalProducts(false));
+    bind('btn-sell-ranch', sellRanchGoods);
+    bind('btn-buy-chicken', () => buyAnimal('chicken'));
+    bind('btn-buy-cow', () => buyAnimal('cow'));
+    bind('btn-use-orebrew', () => usePotionInBattle('oreBrew'));
+    bind('btn-use-milktea', () => usePotionInBattle('milkTea'));
+    bind('btn-battle-orebrew', () => usePotionInBattle('oreBrew'));
+    bind('btn-battle-milktea', () => usePotionInBattle('milkTea'));
+
     canvas.addEventListener('click', onFarmTap);
     canvas.addEventListener('touchend', onFarmTap, { passive: false });
     document.getElementById('btn-bag').onclick = () => { renderBag(); document.getElementById('modal-bag').hidden = false; };

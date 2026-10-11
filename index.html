@@ -10,26 +10,26 @@
 <meta name="format-detection" content="telephone=no,email=no,address=no">
 <meta name="theme-color" content="#3e2723">
 <title>青畦</title>
-<link rel="stylesheet" href="style.css?v=orig1">
+<link rel="stylesheet" href="style.css?v=v4">
 </head>
 <body>
 <div id="app">
   <section id="screen-title" class="screen">
     <div class="title-bg" aria-hidden="true">
       <picture>
-        <source srcset="assets/bg_village.webp?v=orig1" type="image/webp">
-        <img src="assets/bg_village.jpg?v=orig1" alt="" decoding="async">
+        <source srcset="assets/bg_village.webp?v=v4" type="image/webp">
+        <img src="assets/bg_village.jpg?v=v4" alt="" decoding="async">
       </picture>
       <div class="title-bg-shade"></div>
     </div>
     <div class="title-content">
-      <img class="title-hero" src="assets/char_hero.webp?v=orig1" alt="主角" width="140" height="163" decoding="async">
+      <img class="title-hero" src="assets/char_hero.webp?v=v4" alt="主角" width="140" height="163" decoding="async">
       <h1>青畦</h1>
-      <p class="subtitle">種田 · 挖礦 · 釣魚 · 副本 · AUTO</p>
+      <p class="subtitle">種田 · 牧場 · 工坊 · 副本 · AUTO</p>
       <button type="button" class="btn primary" id="btn-start">開始新局</button>
       <button type="button" class="btn" id="btn-continue" hidden>繼續</button>
       <button type="button" class="btn ghost" id="btn-settings-title">設定</button>
-      <p class="hint">開 AUTO，跟場景自動種／挖／釣／打怪</p>
+      <p class="hint">開 AUTO：種田／牧場／工坊／日令／打怪都會代勞</p>
     </div>
   </section>
 
@@ -37,7 +37,7 @@
     <header class="hud">
       <div class="hud-left">
         <div class="hud-hero" title="主角">
-          <img src="assets/char_hero.webp?v=orig1" alt="" decoding="async">
+          <img src="assets/char_hero.webp?v=v4" alt="" decoding="async">
         </div>
         <button type="button" class="hud-icon bag" id="btn-bag" title="背包">
           <span class="hud-icon-glyph" aria-hidden="true">🎒</span>
@@ -54,6 +54,7 @@
         <span class="pill gold" id="hud-gold">銀 80</span>
         <span class="pill food" id="hud-food">糧 12</span>
         <span class="pill combat" id="hud-combat">HP 80 · ATK 8</span>
+        <span class="pill bagcap" id="hud-bagcap">倉 0/40</span>
       </div>
       <div class="hud-right">
         <button type="button" class="btn-icon" id="btn-menu" title="選單">☰</button>
@@ -62,6 +63,8 @@
 
     <nav class="mode-tabs" role="tablist" aria-label="場景">
       <button type="button" class="mode-tab active" data-mode="farm">田畦</button>
+      <button type="button" class="mode-tab" data-mode="ranch">牧場</button>
+      <button type="button" class="mode-tab" data-mode="craft">工坊</button>
       <button type="button" class="mode-tab" data-mode="village">村落</button>
       <button type="button" class="mode-tab" data-mode="mine">礦洞</button>
       <button type="button" class="mode-tab" data-mode="pond">魚塘</button>
@@ -71,10 +74,11 @@
     <div class="scene-wrap">
       <div class="adventure-scene" id="adventure-scene">
         <picture id="scene-pic">
-          <source id="scene-webp" srcset="assets/bg_village.webp?v=orig1" type="image/webp">
-          <img id="scene-img" src="assets/bg_village.jpg?v=orig1" alt="場景" class="scene-img" decoding="async">
+          <source id="scene-webp" srcset="assets/bg_village.webp?v=v4" type="image/webp">
+          <img id="scene-img" src="assets/bg_village.jpg?v=v4" alt="場景" class="scene-img" decoding="async">
         </picture>
         <div class="season-tint" id="season-tint" data-season="0"></div>
+        <div class="season-banner" id="season-banner" data-season="0">春暖 · 春 · 第1日</div>
         <div class="scene-caption" id="scene-caption">春光滿村</div>
         <div class="scene-action-hint" id="scene-hint"></div>
         <div class="toast" id="toast" hidden></div>
@@ -89,13 +93,17 @@
             </div>
             <div class="wave-label" id="wave-label">第 1／3 波</div>
             <div class="hp-block player">
-              <img class="battle-hero" src="assets/char_hero.webp?v=orig1" alt="" decoding="async">
+              <img class="battle-hero" src="assets/char_hero.webp?v=v4" alt="" decoding="async">
               <div class="hp-name">你</div>
               <div class="hp-bar"><div class="hp-fill player" id="player-hp-fill"></div></div>
               <div class="hp-num" id="player-hp-num">0/0</div>
             </div>
           </div>
           <div class="battle-log" id="battle-log"></div>
+          <div class="battle-pots">
+            <button type="button" class="btn pot-btn" id="btn-battle-orebrew">礦泉劑</button>
+            <button type="button" class="btn pot-btn" id="btn-battle-milktea">暖奶飲</button>
+          </div>
         </div>
 
         <div class="dpad" id="dpad" hidden>
@@ -132,8 +140,8 @@
         </div>
         <div class="plot-canvas-wrap">
           <picture class="plot-bg" aria-hidden="true">
-            <source srcset="assets/bg_fields.webp?v=orig1" type="image/webp">
-            <img src="assets/bg_fields.jpg?v=orig1" alt="" decoding="async">
+            <source srcset="assets/bg_fields.webp?v=v4" type="image/webp">
+            <img src="assets/bg_fields.jpg?v=v4" alt="" decoding="async">
           </picture>
           <canvas id="farm" width="360" height="168"></canvas>
         </div>
@@ -169,13 +177,19 @@
     </div>
 
     <div class="mode-panel" id="village-panel" hidden>
-      <p class="mode-blurb">冒險村落 · 可去田畦、礦洞、魚塘，或挑戰副本。</p>
+      <div class="order-board parchment-mini" id="order-board"></div>
+      <div class="village-scroll">
+        <h3 class="panel-h">鄉人</h3>
+        <div id="villager-list" class="villager-list"></div>
+        <h3 class="panel-h">建築</h3>
+        <div id="build-list" class="build-list"></div>
+      </div>
       <div class="controls village-controls">
         <button type="button" class="btn auto-btn" id="btn-auto-v">AUTO</button>
-        <button type="button" class="btn" data-goto="farm">去田畦</button>
-        <button type="button" class="btn" data-goto="mine">進礦洞</button>
-        <button type="button" class="btn" data-goto="pond">去魚塘</button>
-        <button type="button" class="btn primary" data-goto="dungeon">進副本</button>
+        <button type="button" class="btn" data-goto="ranch">牧場</button>
+        <button type="button" class="btn" data-goto="craft">工坊</button>
+        <button type="button" class="btn" data-goto="mine">礦洞</button>
+        <button type="button" class="btn primary" data-goto="dungeon">副本</button>
       </div>
     </div>
 
@@ -207,6 +221,37 @@
       </div>
     </div>
 
+
+    <div class="mode-panel" id="ranch-panel" hidden>
+      <div class="mine-stats">
+        <span id="ranch-feed-label">飼料 0</span>
+        <span>牧場</span>
+      </div>
+      <div id="ranch-unlock-row" class="controls" style="grid-template-columns:1fr">
+        <button type="button" class="btn primary" id="btn-unlock-ranch">開設牧場（50銀）</button>
+      </div>
+      <div id="ranch-list" class="ranch-list"></div>
+      <div class="controls ranch-controls" id="ranch-actions" hidden>
+        <button type="button" class="btn auto-btn" id="btn-auto-r">AUTO</button>
+        <button type="button" class="btn" id="btn-make-feed">磨飼料</button>
+        <button type="button" class="btn" id="btn-feed-all">餵食</button>
+        <button type="button" class="btn primary" id="btn-collect-ranch">收取</button>
+        <button type="button" class="btn" id="btn-sell-ranch">賣蛋奶</button>
+        <button type="button" class="btn" id="btn-buy-chicken">買雞60</button>
+        <button type="button" class="btn" id="btn-buy-cow">買牛140</button>
+      </div>
+    </div>
+
+    <div class="mode-panel" id="craft-panel" hidden>
+      <p class="mode-blurb">作物＋礦物 → 料理／藥劑 · 戰鬥可回血</p>
+      <div id="craft-list" class="craft-list"></div>
+      <div class="controls craft-controls">
+        <button type="button" class="btn auto-btn" id="btn-auto-c">AUTO</button>
+        <button type="button" class="btn" id="btn-use-orebrew">用礦泉劑</button>
+        <button type="button" class="btn" id="btn-use-milktea">用暖奶飲</button>
+      </div>
+    </div>
+
     <div class="mode-panel" id="dungeon-panel" hidden>
       <div class="dungeon-stats">
         <span id="dung-floor-label">層數 1</span>
@@ -219,7 +264,7 @@
         <button type="button" class="btn" id="btn-flee" hidden>撤退</button>
         <button type="button" class="btn" id="btn-next-floor">更深一層</button>
       </div>
-      <p class="mode-blurb tiny-blurb">打怪掉裝備 · 層數愈深稀有度愈高 · AUTO 可自動戰鬥</p>
+      <p class="mode-blurb tiny-blurb">每 5 層有【層主】· 掉更好裝 · AUTO 低血會喝藥</p>
     </div>
   </section>
 
@@ -302,12 +347,12 @@
       <label class="field">API Key（只存本機）
         <input type="password" id="set-key" placeholder="sk-…" autocomplete="off">
       </label>
-      <p class="tiny">v3：副本打怪掉裝備；AUTO 可自動戰鬥。Key 留給之後 AI 方針。</p>
+      <p class="tiny">v4：牧場／工坊／鄉人好感／建築／日令／層主。Key 留給之後 AI 方針。</p>
       <button type="button" class="btn primary" id="btn-save-settings">儲存</button>
       <button type="button" class="btn ghost" id="btn-close-settings">關閉</button>
     </div>
   </div>
 </div>
-<script src="game.js?v=orig1"></script>
+<script src="game.js?v=v4"></script>
 </body>
 </html>

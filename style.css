@@ -210,14 +210,17 @@ html, body {
 
 /* Mode tabs */
 .mode-tabs {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px;
+  display: flex; gap: 3px;
   margin-bottom: 6px; flex-shrink: 0;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; padding-bottom: 2px;
 }
+.mode-tabs::-webkit-scrollbar { display: none; }
 .mode-tab {
   appearance: none; border: 2px solid #8d6e63;
   background: linear-gradient(180deg, #6d4c41, #3e2723);
-  border-radius: 9px; padding: 7px 1px; font-size: 11px; font-weight: 800;
-  cursor: pointer; color: #d7ccc8; min-height: 36px;
+  border-radius: 9px; padding: 7px 6px; font-size: 11px; font-weight: 800;
+  cursor: pointer; color: #d7ccc8; min-height: 36px; flex: 0 0 auto;
   box-shadow:
     inset 0 1px 0 rgba(255,220,150,.12),
     0 2px 0 #1a120c;
@@ -649,4 +652,88 @@ html, body {
   .hud-icon { width: 46px; height: 50px; }
   .hud-hero { width: 46px; height: 50px; }
   .title-hero { width: min(120px, 34vw); }
+}
+
+
+/* ===== v4 polish ===== */
+.mode-tabs {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; padding-bottom: 2px;
+}
+.mode-tabs::-webkit-scrollbar { display: none; }
+.mode-tab { flex: 0 0 auto; min-width: 48px; padding: 6px 8px; font-size: 11px; }
+
+.season-banner {
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  z-index: 4; pointer-events: none;
+  background: linear-gradient(180deg, rgba(247,236,212,.95), rgba(232,212,168,.92));
+  border: 2px solid #c9a227; border-radius: 999px;
+  padding: 4px 14px; font-size: 11px; font-weight: 800; color: #3e2723;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35), 0 0 0 1px #5d4037;
+  white-space: nowrap; letter-spacing: 0.04em;
+}
+.season-banner[data-season="0"] { border-color: #81c784; }
+.season-banner[data-season="1"] { border-color: #ffb74d; }
+.season-banner[data-season="2"] { border-color: #ff8a65; }
+.season-banner[data-season="3"] { border-color: #90caf9; }
+
+.pill.bagcap {
+  background: linear-gradient(180deg, #efebe9, #d7ccc8);
+  color: #4e342e; border-color: #8d6e63;
+}
+
+.parchment-mini {
+  background: linear-gradient(180deg, #f7ecd4, #e8d4a8);
+  border: 2.5px solid #c9a227; border-radius: 12px;
+  padding: 10px; margin-bottom: 8px;
+  box-shadow: 0 0 0 1.5px #5d4037, 0 4px 12px rgba(0,0,0,.25);
+}
+.order-board .order-title { font-size: 13px; font-weight: 800; color: #5d4037; margin-bottom: 4px; }
+.order-board .order-need, .order-board .order-reward { font-size: 12px; color: #6d4c41; margin-bottom: 3px; font-weight: 600; }
+.order-board .btn { margin-top: 6px; width: 100%; }
+
+.village-scroll { max-height: 210px; overflow-y: auto; margin-bottom: 8px; padding-right: 2px; }
+.panel-h {
+  margin: 8px 0 6px; font-size: 12px; font-weight: 800; color: #ffe082;
+  letter-spacing: 0.08em; text-shadow: 0 1px 2px #000;
+}
+.villager-list, .build-list, .ranch-list, .craft-list {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.villager-card, .build-card, .ranch-card, .craft-card {
+  background: linear-gradient(180deg, #f7ecd4, #e8d4a8);
+  border: 2px solid #c9a227; border-radius: 12px; padding: 10px;
+  box-shadow: 0 0 0 1px #5d4037;
+}
+.v-name, .b-name, .rc-name, .cc-name { font-size: 13px; font-weight: 800; color: #3e2723; }
+.v-hearts { font-size: 11px; font-weight: 700; color: #c62828; margin: 2px 0; }
+.v-desc, .b-desc, .rc-st, .cc-need, .cc-desc { font-size: 11px; color: #6d4c41; font-weight: 600; margin-bottom: 4px; }
+.v-gifts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.tiny-btn { padding: 6px 8px !important; font-size: 10px !important; min-height: 28px !important; width: auto !important; }
+
+.ranch-card { display: flex; align-items: center; gap: 10px; }
+.ranch-card.ready { border-color: #66bb6a; background: linear-gradient(180deg, #e8f5e9, #c8e6c9); }
+.rc-ico { font-size: 28px; line-height: 1; }
+.rc-body { flex: 1; }
+
+.craft-card { position: relative; }
+.craft-card.locked { opacity: 0.55; }
+.craft-card .btn { width: 100%; margin-top: 4px; }
+
+.ranch-controls { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.craft-controls { grid-template-columns: 1.1fr 1fr 1fr; }
+
+.battle-pots {
+  display: flex; gap: 6px; justify-content: center; margin-top: 6px;
+}
+.pot-btn {
+  padding: 6px 10px !important; font-size: 11px !important; min-height: 28px !important;
+  background: linear-gradient(180deg, #ce93d8, #8e24aa) !important;
+  color: #fff !important; border-color: #4a148c !important; width: auto !important;
+}
+
+@media (max-height: 700px) {
+  .village-scroll { max-height: 140px; }
+  .season-banner { font-size: 10px; padding: 3px 10px; }
+  .craft-list, .ranch-list { max-height: 120px; overflow-y: auto; }
 }
