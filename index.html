@@ -10,19 +10,20 @@
 <meta name="format-detection" content="telephone=no,email=no,address=no">
 <meta name="theme-color" content="#3e2723">
 <title>青畦</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=orig1">
 </head>
 <body>
 <div id="app">
   <section id="screen-title" class="screen">
     <div class="title-bg" aria-hidden="true">
       <picture>
-        <source srcset="assets/bg_town.webp" type="image/webp">
-        <img src="assets/bg_town.jpg" alt="" decoding="async">
+        <source srcset="assets/bg_village.webp?v=orig1" type="image/webp">
+        <img src="assets/bg_village.jpg?v=orig1" alt="" decoding="async">
       </picture>
       <div class="title-bg-shade"></div>
     </div>
     <div class="title-content">
+      <img class="title-hero" src="assets/char_hero.webp?v=orig1" alt="主角" width="140" height="163" decoding="async">
       <h1>青畦</h1>
       <p class="subtitle">種田 · 挖礦 · 釣魚 · 副本 · AUTO</p>
       <button type="button" class="btn primary" id="btn-start">開始新局</button>
@@ -35,6 +36,9 @@
   <section id="screen-game" class="screen" hidden>
     <header class="hud">
       <div class="hud-left">
+        <div class="hud-hero" title="主角">
+          <img src="assets/char_hero.webp?v=orig1" alt="" decoding="async">
+        </div>
         <button type="button" class="hud-icon bag" id="btn-bag" title="背包">
           <span class="hud-icon-glyph" aria-hidden="true">🎒</span>
           <span class="hud-icon-label">BAG</span>
@@ -67,8 +71,8 @@
     <div class="scene-wrap">
       <div class="adventure-scene" id="adventure-scene">
         <picture id="scene-pic">
-          <source id="scene-webp" srcset="assets/bg_town.webp" type="image/webp">
-          <img id="scene-img" src="assets/bg_town.jpg" alt="場景" class="scene-img" decoding="async">
+          <source id="scene-webp" srcset="assets/bg_village.webp?v=orig1" type="image/webp">
+          <img id="scene-img" src="assets/bg_village.jpg?v=orig1" alt="場景" class="scene-img" decoding="async">
         </picture>
         <div class="season-tint" id="season-tint" data-season="0"></div>
         <div class="scene-caption" id="scene-caption">春光滿村</div>
@@ -85,6 +89,7 @@
             </div>
             <div class="wave-label" id="wave-label">第 1／3 波</div>
             <div class="hp-block player">
+              <img class="battle-hero" src="assets/char_hero.webp?v=orig1" alt="" decoding="async">
               <div class="hp-name">你</div>
               <div class="hp-bar"><div class="hp-fill player" id="player-hp-fill"></div></div>
               <div class="hp-num" id="player-hp-num">0/0</div>
@@ -127,8 +132,8 @@
         </div>
         <div class="plot-canvas-wrap">
           <picture class="plot-bg" aria-hidden="true">
-            <source srcset="assets/bg_fields.webp" type="image/webp">
-            <img src="assets/bg_fields.jpg" alt="" decoding="async">
+            <source srcset="assets/bg_fields.webp?v=orig1" type="image/webp">
+            <img src="assets/bg_fields.jpg?v=orig1" alt="" decoding="async">
           </picture>
           <canvas id="farm" width="360" height="168"></canvas>
         </div>
@@ -303,6 +308,6 @@
     </div>
   </div>
 </div>
-<script src="game.js"></script>
+<script src="game.js?v=orig1"></script>
 </body>
 </html>

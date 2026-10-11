@@ -7,7 +7,7 @@
   const SETTINGS_KEY = 'qingqi_settings_v1';
   const COLS = 6;
   const ROWS = 7;
-  const TILE = 52;
+  const TILE = 58;
   const PLOT_COLS = 6;
   const HOUSE_CELLS = new Set(['1,1', '2,1']);
 
@@ -18,12 +18,13 @@
     pond: ['塘面春波', '夏日魚躍', '秋水清澈', '冬塘微凍'],
     dungeon: ['副本入口', '焰影地牢', '深處回響', '寒窟寂靜'],
   };
+  const ASSET_V = '?v=orig1';
   const SCENE_ART = {
-    village: { webp: 'assets/bg_town.webp', jpg: 'assets/bg_town.jpg', alt: '青畦村落' },
-    farm: { webp: 'assets/bg_town.webp', jpg: 'assets/bg_town.jpg', alt: '田畦外景' },
-    mine: { webp: 'assets/bg_mine.webp', jpg: 'assets/bg_mine.jpg', alt: '礦洞' },
-    pond: { webp: 'assets/bg_pond.webp', jpg: 'assets/bg_pond.jpg', alt: '魚塘' },
-    dungeon: { webp: 'assets/bg_dungeon.webp', jpg: 'assets/bg_dungeon.jpg', alt: '副本' },
+    village: { webp: 'assets/bg_village.webp' + ASSET_V, jpg: 'assets/bg_village.jpg' + ASSET_V, alt: '青畦村落' },
+    farm:    { webp: 'assets/bg_fields.webp' + ASSET_V,  jpg: 'assets/bg_fields.jpg' + ASSET_V,  alt: '田畦外景' },
+    mine:    { webp: 'assets/bg_mine.webp' + ASSET_V,    jpg: 'assets/bg_mine.jpg' + ASSET_V,    alt: '礦洞' },
+    pond:    { webp: 'assets/bg_pond.webp' + ASSET_V,    jpg: 'assets/bg_pond.jpg' + ASSET_V,    alt: '魚塘' },
+    dungeon: { webp: 'assets/bg_dungeon.webp' + ASSET_V, jpg: 'assets/bg_dungeon.jpg' + ASSET_V, alt: '副本' },
   };
 
   const SEASONS = ['春', '夏', '秋', '冬'];
@@ -495,83 +496,298 @@
       .filter(p => p.kind === 'soil' || p.kind === 'locked')
       .sort((a, b) => (a.y - b.y) || (a.x - b.x));
   }
-  function drawSoilCell(px, py, s, plot) {
-    const pad = 3;
-    const x = px + pad, y = py + pad, w = s - pad * 2, h = s - pad * 2;
-    const r = 8;
-    function roundRect(fill, stroke, lw) {
+  function roundRectPath(x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+  function drawSparkle(cx, cy, size, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#fffde7';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - size);
+    ctx.lineTo(cx + size * 0.28, cy - size * 0.28);
+    ctx.lineTo(cx + size, cy);
+    ctx.lineTo(cx + size * 0.28, cy + size * 0.28);
+    ctx.lineTo(cx, cy + size);
+    ctx.lineTo(cx - size * 0.28, cy + size * 0.28);
+    ctx.lineTo(cx - size, cy);
+    ctx.lineTo(cx - size * 0.28, cy - size * 0.28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  function drawCropSprite(cx, baseY, crop, stage, t) {
+    const c = CROPS[crop];
+    if (stage === 1) {
+      ctx.fillStyle = '#4e342e';
+      ctx.fillRect(cx - 1.5, baseY - 6, 3, 8);
+      ctx.fillStyle = '#c5e1a5';
       ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w, y, x + w, y + h, r);
-      ctx.arcTo(x + w, y + h, x, y + h, r);
-      ctx.arcTo(x, y + h, x, y, r);
-      ctx.arcTo(x, y, x + w, y, r);
-      ctx.closePath();
-      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
-      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 2; ctx.stroke(); }
+      ctx.ellipse(cx - 4, baseY - 8, 5, 3, -0.5, 0, Math.PI * 2);
+      ctx.ellipse(cx + 4, baseY - 8, 5, 3, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#8bc34a';
+      ctx.beginPath(); ctx.arc(cx, baseY - 10, 3.2, 0, Math.PI * 2); ctx.fill();
+    } else if (stage === 2) {
+      ctx.fillStyle = '#5d4037';
+      ctx.fillRect(cx - 2, baseY - 14, 4, 14);
+      ctx.fillStyle = c.color;
+      ctx.beginPath();
+      ctx.ellipse(cx - 9, baseY - 12, 8, 5, -0.55, 0, Math.PI * 2);
+      ctx.ellipse(cx + 9, baseY - 12, 8, 5, 0.55, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#2e7d32';
+      ctx.beginPath(); ctx.ellipse(cx, baseY - 18, 7, 6, 0, 0, Math.PI * 2); ctx.fill();
+    } else if (stage === 3) {
+      for (let i = -1; i <= 1; i++) {
+        const sx = cx + i * 11;
+        ctx.fillStyle = '#5d4037';
+        ctx.fillRect(sx - 2, baseY - 22, 4, 22);
+        ctx.fillStyle = c.color;
+        ctx.beginPath();
+        ctx.moveTo(sx, baseY - 28);
+        ctx.quadraticCurveTo(sx - 10, baseY - 16, sx - 3, baseY - 6);
+        ctx.lineTo(sx + 3, baseY - 6);
+        ctx.quadraticCurveTo(sx + 10, baseY - 16, sx, baseY - 28);
+        ctx.fill();
+      }
+    } else {
+      for (let i = -1; i <= 1; i++) {
+        const sx = cx + i * 11;
+        ctx.fillStyle = '#6d4c41';
+        ctx.fillRect(sx - 2.5, baseY - 26, 5, 26);
+        const grd = ctx.createLinearGradient(sx, baseY - 34, sx, baseY - 8);
+        grd.addColorStop(0, c.ripe);
+        grd.addColorStop(1, c.color);
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.moveTo(sx, baseY - 36);
+        ctx.quadraticCurveTo(sx - 12, baseY - 18, sx - 4, baseY - 6);
+        ctx.lineTo(sx + 4, baseY - 6);
+        ctx.quadraticCurveTo(sx + 12, baseY - 18, sx, baseY - 36);
+        ctx.fill();
+      }
+      const pulse = 0.55 + 0.45 * Math.sin(t * 0.006);
+      drawSparkle(cx - 12, baseY - 30, 5, pulse);
+      drawSparkle(cx + 10, baseY - 22, 4, 1 - pulse * 0.6);
+      drawSparkle(cx + 2, baseY - 38, 3.5, pulse * 0.8);
     }
+  }
+  function drawSoilCell(px, py, s, plot) {
+    const t = performance.now();
+    const outer = 2;
+    const frame = 4;
+    const ix = px + outer + frame;
+    const iy = py + outer + frame;
+    const iw = s - (outer + frame) * 2;
+    const ih = s - (outer + frame) * 2;
+    const selected = selectedPlot && selectedPlot.x === plot.x && selectedPlot.y === plot.y;
+
+    // Wood/stone outer frame
+    roundRectPath(px + 1, py + 1, s - 2, s - 2, 10);
+    ctx.fillStyle = selected ? '#c9a227' : '#6d4c41';
+    ctx.fill();
+    roundRectPath(px + 3, py + 3, s - 6, s - 6, 8);
+    const frameGrad = ctx.createLinearGradient(px, py, px + s, py + s);
+    frameGrad.addColorStop(0, '#bcaaa4');
+    frameGrad.addColorStop(0.35, '#8d6e63');
+    frameGrad.addColorStop(0.7, '#5d4037');
+    frameGrad.addColorStop(1, '#4e342e');
+    ctx.fillStyle = frameGrad;
+    ctx.fill();
+    // Stone studs on corners
+    ctx.fillStyle = '#d7ccc8';
+    [[6, 6], [s - 10, 6], [6, s - 10], [s - 10, s - 10]].forEach(([sx, sy]) => {
+      ctx.beginPath(); ctx.arc(px + sx + 2, py + sy + 2, 2.2, 0, Math.PI * 2); ctx.fill();
+    });
+
     if (plot.kind === 'locked') {
-      roundRect('rgba(165,214,167,0.72)', '#5d4037', 2);
-      ctx.fillStyle = 'rgba(93,64,55,0.35)';
-      ctx.font = 'bold 18px sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('鎖', px + s / 2, py + s / 2);
+      roundRectPath(ix, iy, iw, ih, 6);
+      ctx.fillStyle = '#a5d6a7';
+      ctx.fill();
+      const mist = ctx.createLinearGradient(ix, iy, ix, iy + ih);
+      mist.addColorStop(0, 'rgba(232,245,233,0.85)');
+      mist.addColorStop(0.5, 'rgba(165,214,167,0.55)');
+      mist.addColorStop(1, 'rgba(129,199,132,0.75)');
+      ctx.fillStyle = mist;
+      ctx.fill();
+      // soft fog wisps
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      for (let i = 0; i < 4; i++) {
+        const fy = iy + 8 + i * 10 + Math.sin(t * 0.002 + i) * 2;
+        ctx.beginPath();
+        ctx.ellipse(ix + iw * 0.5, fy, iw * 0.38, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // locked stone pad
+      roundRectPath(ix + iw * 0.28, iy + ih * 0.28, iw * 0.44, ih * 0.42, 5);
+      ctx.fillStyle = '#78909c';
+      ctx.fill();
+      ctx.strokeStyle = '#455a64';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#ffe082';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🔒', px + s / 2, py + s / 2 + 1);
+      ctx.fillStyle = 'rgba(62,39,35,0.7)';
+      ctx.font = 'bold 9px sans-serif';
+      ctx.fillText('擴田', px + s / 2, py + s - 9);
+      if (selected) {
+        roundRectPath(px + 2, py + 2, s - 4, s - 4, 10);
+        ctx.strokeStyle = '#ffeb3b';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
       return;
     }
-    roundRect(plot.watered ? '#6d4c41' : '#8d6e63', '#4e342e', 2);
-    ctx.fillStyle = 'rgba(62,39,35,0.35)';
-    for (let i = 0; i < 3; i++) ctx.fillRect(x + 6, y + 10 + i * 12, w - 12, 3);
+
+    // Soil bed
+    roundRectPath(ix, iy, iw, ih, 6);
+    const soilGrad = ctx.createLinearGradient(ix, iy, ix, iy + ih);
     if (plot.watered) {
-      ctx.fillStyle = 'rgba(33,150,243,0.32)';
-      ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+      soilGrad.addColorStop(0, '#5d4037');
+      soilGrad.addColorStop(0.5, '#4e342e');
+      soilGrad.addColorStop(1, '#3e2723');
+    } else {
+      soilGrad.addColorStop(0, '#a1887f');
+      soilGrad.addColorStop(0.45, '#8d6e63');
+      soilGrad.addColorStop(1, '#6d4c41');
     }
+    ctx.fillStyle = soilGrad;
+    ctx.fill();
+
+    // Furrows / soil texture
+    ctx.save();
+    ctx.beginPath();
+    roundRectPath(ix, iy, iw, ih, 6);
+    ctx.clip();
+    for (let i = 0; i < 4; i++) {
+      const fy = iy + 7 + i * ((ih - 10) / 3.2);
+      ctx.strokeStyle = plot.watered ? 'rgba(33,150,243,0.22)' : 'rgba(62,39,35,0.28)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(ix + 4, fy);
+      ctx.quadraticCurveTo(ix + iw * 0.5, fy + (i % 2 ? 2 : -2), ix + iw - 4, fy);
+      ctx.stroke();
+    }
+    // crumbly dots
+    ctx.fillStyle = plot.watered ? 'rgba(100,181,246,0.25)' : 'rgba(62,39,35,0.2)';
+    for (let i = 0; i < 12; i++) {
+      const dx = ix + 4 + ((i * 17 + plot.x * 13) % (iw - 8));
+      const dy = iy + 4 + ((i * 11 + plot.y * 7) % (ih - 8));
+      ctx.fillRect(dx, dy, 2, 2);
+    }
+
+    // Watered shimmer
+    if (plot.watered) {
+      const shimmer = ctx.createLinearGradient(ix, iy, ix + iw, iy + ih);
+      const shift = (Math.sin(t * 0.004 + plot.x + plot.y) + 1) * 0.5;
+      shimmer.addColorStop(Math.max(0, shift - 0.2), 'rgba(129,212,250,0)');
+      shimmer.addColorStop(shift, 'rgba(179,229,252,0.45)');
+      shimmer.addColorStop(Math.min(1, shift + 0.2), 'rgba(129,212,250,0)');
+      ctx.fillStyle = shimmer;
+      ctx.fillRect(ix, iy, iw, ih);
+      ctx.fillStyle = 'rgba(227,242,253,0.35)';
+      for (let i = 0; i < 3; i++) {
+        const bx = ix + 6 + i * 12 + Math.sin(t * 0.005 + i) * 3;
+        const by = iy + 8 + ((i * 9 + t * 0.02) % (ih - 14));
+        ctx.beginPath(); ctx.ellipse(bx, by, 3, 1.5, 0, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    // Inner highlight rim
+    roundRectPath(ix + 0.5, iy + 0.5, iw - 1, ih - 1, 5);
+    ctx.strokeStyle = plot.watered ? 'rgba(100,181,246,0.55)' : 'rgba(215,204,200,0.35)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Crop
     if (plot.crop && plot.stage > 0) {
       const c = CROPS[plot.crop];
-      const stage = plot.stage;
       const cx = px + s / 2;
-      if (stage === 1) {
-        ctx.fillStyle = '#3e2723';
-        ctx.fillRect(cx - 2, py + s * 0.55, 4, 10);
-        ctx.fillStyle = '#aed581';
-        ctx.beginPath(); ctx.arc(cx, py + s * 0.52, 4, 0, Math.PI * 2); ctx.fill();
-      } else if (stage === 2) {
-        ctx.fillStyle = c.color;
-        ctx.fillRect(cx - 5, py + s * 0.42, 10, 16);
-        ctx.fillStyle = '#2e7d32';
+      const baseY = py + s * 0.72;
+      drawCropSprite(cx, baseY, plot.crop, plot.stage, t);
+      // name chip
+      const label = c.name;
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(label).width + 10;
+      const ly = py + s - 11;
+      roundRectPath(cx - tw / 2, ly - 7, tw, 14, 7);
+      ctx.fillStyle = plot.stage >= 4 ? 'rgba(255,236,179,0.92)' : 'rgba(255,253,245,0.88)';
+      ctx.fill();
+      ctx.strokeStyle = plot.stage >= 4 ? '#f9a825' : 'rgba(93,64,55,0.35)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = plot.stage >= 4 ? '#e65100' : '#4e342e';
+      ctx.fillText(label, cx, ly);
+      // growth pips
+      const pipY = iy + 5;
+      for (let i = 0; i < 4; i++) {
         ctx.beginPath();
-        ctx.ellipse(cx - 8, py + s * 0.45, 6, 4, -0.4, 0, Math.PI * 2);
-        ctx.ellipse(cx + 8, py + s * 0.45, 6, 4, 0.4, 0, Math.PI * 2);
+        ctx.arc(ix + 7 + i * 8, pipY, 2.4, 0, Math.PI * 2);
+        ctx.fillStyle = i < plot.stage ? (plot.stage >= 4 ? '#ffb300' : '#81c784') : 'rgba(0,0,0,0.2)';
         ctx.fill();
-      } else if (stage === 3) {
-        ctx.fillStyle = c.color;
-        for (let i = -1; i <= 1; i++) ctx.fillRect(cx + i * 12 - 4, py + s * 0.32, 8, 22);
-      } else {
-        ctx.fillStyle = c.ripe;
-        for (let i = -1; i <= 1; i++) ctx.fillRect(cx + i * 12 - 5, py + s * 0.26, 10, 26);
-        ctx.fillStyle = '#fffde7';
-        ctx.fillRect(cx - 10, py + s * 0.3, 3, 3);
-        ctx.fillRect(cx + 8, py + s * 0.36, 3, 3);
       }
-      ctx.fillStyle = '#212121';
-      ctx.font = 'bold 11px sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-      ctx.fillText(c.name, cx, py + s - 6);
+    } else {
+      // empty soil hint
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.font = '9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('空畦', px + s / 2, py + s / 2);
     }
-    if (selectedPlot && selectedPlot.x === plot.x && selectedPlot.y === plot.y) roundRect(null, '#ffeb3b', 3);
+
+    if (selected) {
+      roundRectPath(px + 1.5, py + 1.5, s - 3, s - 3, 10);
+      ctx.strokeStyle = '#ffeb3b';
+      ctx.lineWidth = 2.8;
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,236,179,0.5)';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+    }
   }
   function drawFarm() {
     if (!state) return;
     const cells = farmablePlots();
     const cols = PLOT_COLS;
     const rows = Math.max(2, Math.ceil(cells.length / cols));
-    const gap = 4, pad = 8, s = TILE;
+    const gap = 6, pad = 10, s = TILE;
     const w = pad * 2 + cols * s + (cols - 1) * gap;
     const h = pad * 2 + rows * s + (rows - 1) * gap;
     if (canvas.width !== w) canvas.width = w;
     if (canvas.height !== h) canvas.height = h;
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = 'rgba(255,253,245,0.18)';
+    // soft parchment wash over fields backdrop
+    const wash = ctx.createLinearGradient(0, 0, 0, h);
+    wash.addColorStop(0, 'rgba(255,253,245,0.12)');
+    wash.addColorStop(1, 'rgba(232,212,168,0.22)');
+    ctx.fillStyle = wash;
     ctx.fillRect(0, 0, w, h);
+    // decorative path line between rows
+    ctx.strokeStyle = 'rgba(158,158,158,0.25)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([4, 6]);
+    for (let r = 1; r < rows; r++) {
+      const yy = pad + r * s + (r - 0.5) * gap;
+      ctx.beginPath();
+      ctx.moveTo(pad, yy);
+      ctx.lineTo(w - pad, yy);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
     cells.forEach((plot, i) => {
       const col = i % cols, row = Math.floor(i / cols);
       drawSoilCell(pad + col * (s + gap), pad + row * (s + gap), s, plot);
